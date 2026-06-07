@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Troy Altus">
+<meta name="dcterms.date" content="2026-05-01">
+
+<title>The Architecture of Flight: A Network Analysis of the US Airport System</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="airport-network-analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="airport-network-analysis_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="airport-network-analysis_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="airport-network-analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="airport-network-analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="airport-network-analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="airport-network-analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="airport-network-analysis_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="airport-network-analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="airport-network-analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="airport-network-analysis_files/libs/bootstrap/bootstrap-8ffd5f67044e5306d9846f29df41dda5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+<script>
+window.PlotlyConfig = {MathJaxConfig: 'local'};
+if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}
+</script>
+<script type="module">import "https://cdn.plot.ly/plotly-3.4.0.min"</script>
+
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract"><span class="header-section-number">1</span> Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction"><span class="header-section-number">2</span> Introduction</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><span class="header-section-number">3</span> Data</a>
+  <ul class="collapse">
+  <li><a href="#source-and-acquisition" id="toc-source-and-acquisition" class="nav-link" data-scroll-target="#source-and-acquisition"><span class="header-section-number">3.1</span> Source and Acquisition</a></li>
+  <li><a href="#dataset-limitations" id="toc-dataset-limitations" class="nav-link" data-scroll-target="#dataset-limitations"><span class="header-section-number">3.2</span> Dataset Limitations</a></li>
+  </ul></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="header-section-number">4</span> Methods</a>
+  <ul class="collapse">
+  <li><a href="#graph-construction" id="toc-graph-construction" class="nav-link" data-scroll-target="#graph-construction"><span class="header-section-number">4.1</span> Graph Construction</a></li>
+  <li><a href="#degree-distribution-and-scale-free-test" id="toc-degree-distribution-and-scale-free-test" class="nav-link" data-scroll-target="#degree-distribution-and-scale-free-test"><span class="header-section-number">4.2</span> Degree Distribution and Scale-Free Test</a></li>
+  <li><a href="#small-world-coefficient" id="toc-small-world-coefficient" class="nav-link" data-scroll-target="#small-world-coefficient"><span class="header-section-number">4.3</span> Small-World Coefficient</a></li>
+  <li><a href="#centrality-measures" id="toc-centrality-measures" class="nav-link" data-scroll-target="#centrality-measures"><span class="header-section-number">4.4</span> Centrality Measures</a></li>
+  <li><a href="#robustness-analysis" id="toc-robustness-analysis" class="nav-link" data-scroll-target="#robustness-analysis"><span class="header-section-number">4.5</span> Robustness Analysis</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="header-section-number">5</span> Results</a>
+  <ul class="collapse">
+  <li><a href="#network-overview" id="toc-network-overview" class="nav-link" data-scroll-target="#network-overview"><span class="header-section-number">5.1</span> Network Overview</a></li>
+  <li><a href="#geographic-map" id="toc-geographic-map" class="nav-link" data-scroll-target="#geographic-map"><span class="header-section-number">5.2</span> Geographic Map</a></li>
+  <li><a href="#network-topology" id="toc-network-topology" class="nav-link" data-scroll-target="#network-topology"><span class="header-section-number">5.3</span> Network Topology</a></li>
+  <li><a href="#degree-distribution" id="toc-degree-distribution" class="nav-link" data-scroll-target="#degree-distribution"><span class="header-section-number">5.4</span> Degree Distribution</a></li>
+  <li><a href="#hub-rankings-by-centrality" id="toc-hub-rankings-by-centrality" class="nav-link" data-scroll-target="#hub-rankings-by-centrality"><span class="header-section-number">5.5</span> Hub Rankings by Centrality</a></li>
+  <li><a href="#small-world-properties" id="toc-small-world-properties" class="nav-link" data-scroll-target="#small-world-properties"><span class="header-section-number">5.6</span> Small-World Properties</a></li>
+  <li><a href="#robustness-analysis-1" id="toc-robustness-analysis-1" class="nav-link" data-scroll-target="#robustness-analysis-1"><span class="header-section-number">5.7</span> Robustness Analysis</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion"><span class="header-section-number">6</span> Discussion</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="header-section-number">7</span> Conclusion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="airport-network-analysis.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">The Architecture of Flight: A Network Analysis of the US Airport System</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Troy Altus </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 1, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="abstract" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="abstract"><span class="header-section-number">1</span> Abstract</h2>
+<p>Every time a flight is delayed in Atlanta, the ripple spreads to Pittsburgh, Phoenix, and Portland. This is not a coincidence — it is topology. The US domestic air network is a textbook example of a scale-free, small-world graph: a system shaped not by central planning but by the relentless arithmetic of preferential attachment, where large hubs attract more routes because they already have routes. This paper applies graph-theoretic analysis to the US domestic airport network using the OpenFlights dataset <span class="citation" data-cites="openflights2024">(<a href="#ref-openflights2024" role="doc-biblioref">OpenFlights.org 2024</a>)</span>, quantifying degree distribution, betweenness centrality, clustering behavior, and robustness under both random failure and targeted attack. The findings confirm that a small number of hub airports act as disproportionate load-bearers, and that the network’s tolerance of random failure masks a striking vulnerability to coordinated disruption of its most central nodes.</p>
+</section>
+<section id="introduction" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="introduction"><span class="header-section-number">2</span> Introduction</h2>
+<p>There is a particular brand of airport misery that frequent travelers know well: the connecting flight that exists only because some planner, decades ago, decided that Chicago should be the midpoint between everywhere and everywhere else. The hub-and-spoke model of air travel is not merely a scheduling convenience — it is an emergent property of network economics, and it leaves a distinctive fingerprint in the topology of the system it creates.</p>
+<p>Modern network science offers a precise vocabulary for this fingerprint. The foundational insight of <span class="citation" data-cites="watts1998collective">Watts and Strogatz (<a href="#ref-watts1998collective" role="doc-biblioref">1998</a>)</span> is that many real-world systems — from social networks to neural circuits to power grids — occupy a middle ground between the rigid regularity of a lattice and the pure randomness of an Erdős–Rényi graph. These <em>small-world</em> networks exhibit high local clustering (my friends tend to know each other) while maintaining surprisingly short average path lengths (everyone is nonetheless a few handshakes from everyone else). A year later, <span class="citation" data-cites="barabasi1999emergence">Barabási and Albert (<a href="#ref-barabasi1999emergence" role="doc-biblioref">1999</a>)</span> showed that many of these same networks follow a power-law degree distribution — a signature of <em>scale-free</em> structure, where a small number of nodes accumulate a vastly disproportionate number of connections.</p>
+<p>The airport network is a canonical instance of this class. <span class="citation" data-cites="guimera2005worldwide">Guimerà et al. (<a href="#ref-guimera2005worldwide" role="doc-biblioref">2005</a>)</span> analyzed the worldwide air transportation network and found that it exhibits both scale-free degree distributions and small-world properties, with hub cities playing roles far beyond their geographic or economic size. The present analysis restricts attention to the US domestic network, where data quality is high and policy implications are direct: understanding which airports are structurally critical is the first step toward designing a system that fails gracefully.</p>
+<p>Three questions organize this paper:</p>
+<ol type="1">
+<li><strong>Topology:</strong> Does the US airport network follow a power-law degree distribution, and does it exhibit small-world properties?</li>
+<li><strong>Centrality:</strong> Which airports are the most structurally critical, and by what measure?</li>
+<li><strong>Robustness:</strong> How does the network respond to random node failure versus targeted removal of its most central nodes?</li>
+</ol>
+</section>
+<section id="data" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="data"><span class="header-section-number">3</span> Data</h2>
+<section id="source-and-acquisition" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="source-and-acquisition"><span class="header-section-number">3.1</span> Source and Acquisition</h3>
+<p>Route and airport data are drawn from the OpenFlights dataset <span class="citation" data-cites="openflights2024">(<a href="#ref-openflights2024" role="doc-biblioref">OpenFlights.org 2024</a>)</span>, a curated open-access database of global airline routes and airport coordinates maintained by OpenFlights.org. Two files are used:</p>
+<ul>
+<li><strong>airports.dat</strong> — 7,698 airports worldwide with IATA code, name, city, country, latitude, and longitude.</li>
+<li><strong>routes.dat</strong> — 67,663 routes covering 3,321 airports and 548 airlines.</li>
+</ul>
+<p>Analysis is restricted to US domestic nonstop routes: both origin and destination must be US airports (country = “United States”), and routes with intermediate stops are excluded.</p>
+</section>
+<section id="dataset-limitations" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="dataset-limitations"><span class="header-section-number">3.2</span> Dataset Limitations</h3>
+<p>OpenFlights represents scheduled routes as reported by airlines and may not reflect real-time or seasonal schedules. Routes are unweighted — passenger volume, frequency, and seat capacity are not encoded. All edges are treated as undirected, collapsing the distinction between origin and destination. For weighted or directed analyses, the BTS T-100 Domestic Segment database <span class="citation" data-cites="bts2024t100">(<a href="#ref-bts2024t100" role="doc-biblioref">Bureau of Transportation Statistics 2024</a>)</span> provides monthly passenger and departure counts at the route level and is the recommended complement to this dataset.</p>
+</section>
+</section>
+<section id="methods" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="methods"><span class="header-section-number">4</span> Methods</h2>
+<section id="graph-construction" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="graph-construction"><span class="header-section-number">4.1</span> Graph Construction</h3>
+<p>The airport network is modeled as a simple undirected graph <span class="math inline">\(G = (V, E)\)</span>, where each vertex <span class="math inline">\(v \in V\)</span> represents a US airport (identified by IATA code) and each edge <span class="math inline">\((u, v) \in E\)</span> represents the existence of at least one nonstop domestic route between airports <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>. Multiple airlines operating the same route are collapsed to a single edge.</p>
+<p>All path-length and clustering metrics are computed on the largest connected component (LCC) to avoid undefined values in disconnected subgraphs.</p>
+</section>
+<section id="degree-distribution-and-scale-free-test" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="degree-distribution-and-scale-free-test"><span class="header-section-number">4.2</span> Degree Distribution and Scale-Free Test</h3>
+<p>The degree of a node <span class="math inline">\(k_i = |\{j : (i,j) \in E\}|\)</span> counts its direct connections. For a scale-free network, the degree distribution follows a power law:</p>
+<p><span class="math display">\[P(k) \sim k^{-\gamma}\]</span></p>
+<p>where <span class="math inline">\(\gamma\)</span> is the scaling exponent. Following <span class="citation" data-cites="clauset2009power">Clauset et al. (<a href="#ref-clauset2009power" role="doc-biblioref">2009</a>)</span>, we fit <span class="math inline">\(\gamma\)</span> by ordinary least squares regression on the log-log complementary cumulative distribution function (CCDF). A value <span class="math inline">\(2 &lt; \gamma &lt; 3\)</span> is characteristic of most empirically observed scale-free networks.</p>
+</section>
+<section id="small-world-coefficient" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="small-world-coefficient"><span class="header-section-number">4.3</span> Small-World Coefficient</h3>
+<p><span class="citation" data-cites="watts1998collective">Watts and Strogatz (<a href="#ref-watts1998collective" role="doc-biblioref">1998</a>)</span> characterize a small-world network by comparing two statistics against null models drawn from equivalent Erdős–Rényi random graphs:</p>
+<ul>
+<li><p><strong>Clustering coefficient</strong> <span class="math inline">\(C\)</span> — probability that two neighbors of a node are also connected: <span class="math display">\[C = \frac{1}{n} \sum_i \frac{2 t_i}{k_i(k_i - 1)}\]</span> where <span class="math inline">\(t_i\)</span> is the number of triangles through node <span class="math inline">\(i\)</span>.</p></li>
+<li><p><strong>Average shortest path length</strong> <span class="math inline">\(L\)</span> — mean geodesic distance between all pairs.</p></li>
+</ul>
+<p>For an equivalent random graph with <span class="math inline">\(n\)</span> nodes and mean degree <span class="math inline">\(\langle k \rangle\)</span>: <span class="math display">\[C_{\text{rand}} \approx \frac{\langle k \rangle}{n}, \qquad L_{\text{rand}} \approx \frac{\ln n}{\ln \langle k \rangle}\]</span></p>
+<p>The small-world coefficient is: <span class="math display">\[\sigma = \frac{C / C_{\text{rand}}}{L / L_{\text{rand}}}\]</span></p>
+<p>A value <span class="math inline">\(\sigma \gg 1\)</span> indicates small-world structure.</p>
+</section>
+<section id="centrality-measures" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="centrality-measures"><span class="header-section-number">4.4</span> Centrality Measures</h3>
+<p>Two centrality measures are computed:</p>
+<p><strong>Degree centrality</strong> normalizes degree by the maximum possible: <span class="math display">\[C_D(i) = \frac{k_i}{n - 1}\]</span></p>
+<p><strong>Betweenness centrality</strong> counts the fraction of all-pairs shortest paths that pass through node <span class="math inline">\(i\)</span>: <span class="math display">\[C_B(i) = \frac{1}{(n-1)(n-2)} \sum_{s \neq t \neq i} \frac{\sigma_{st}(i)}{\sigma_{st}}\]</span></p>
+<p>where <span class="math inline">\(\sigma_{st}\)</span> is the total number of shortest paths from <span class="math inline">\(s\)</span> to <span class="math inline">\(t\)</span> and <span class="math inline">\(\sigma_{st}(i)\)</span> is the number passing through <span class="math inline">\(i\)</span>. Betweenness centrality identifies <em>brokers</em> — airports that sit on many critical paths even if they are not the largest hubs by degree.</p>
+</section>
+<section id="robustness-analysis" class="level3" data-number="4.5">
+<h3 data-number="4.5" class="anchored" data-anchor-id="robustness-analysis"><span class="header-section-number">4.5</span> Robustness Analysis</h3>
+<p>Node removal experiments follow <span class="citation" data-cites="albert2000error">Albert et al. (<a href="#ref-albert2000error" role="doc-biblioref">2000</a>)</span>. Two strategies are compared:</p>
+<ul>
+<li><strong>Random failure</strong> — nodes removed in a uniformly random order (averaged over 10 trials)</li>
+<li><strong>Targeted attack</strong> — nodes removed in descending order of betweenness centrality (recomputed after each removal step for accuracy; approximated here with a static pre-computed ranking for computational tractability)</li>
+</ul>
+<p>After each removal step, the size of the largest connected component (LCC) as a fraction of the original network is recorded.</p>
+</section>
+</section>
+<section id="results" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="results"><span class="header-section-number">5</span> Results</h2>
+<section id="network-overview" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="network-overview"><span class="header-section-number">5.1</span> Network Overview</h3>
+<div class="cell" data-execution_count="3">
+<div id="tbl-summary" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: US domestic airport network summary statistics
+</figcaption>
+<div aria-describedby="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="9">
+<style type="text/css">
+</style>
+
+<table id="T_a8950" class="cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th id="T_a8950_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Metric</th>
+<th id="T_a8950_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_a8950_row0_col0" class="data row0 col0">Nodes (airports)</td>
+<td id="T_a8950_row0_col1" class="data row0 col1">541</td>
+</tr>
+<tr class="even">
+<td id="T_a8950_row1_col0" class="data row1 col0">Edges (routes)</td>
+<td id="T_a8950_row1_col1" class="data row1 col1">2,780</td>
+</tr>
+<tr class="odd">
+<td id="T_a8950_row2_col0" class="data row2 col0">Mean degree ⟨k⟩</td>
+<td id="T_a8950_row2_col1" class="data row2 col1">10.28</td>
+</tr>
+<tr class="even">
+<td id="T_a8950_row3_col0" class="data row3 col0">Max degree</td>
+<td id="T_a8950_row3_col1" class="data row3 col1">153</td>
+</tr>
+<tr class="odd">
+<td id="T_a8950_row4_col0" class="data row4 col0">Clustering coefficient C</td>
+<td id="T_a8950_row4_col1" class="data row4 col1">0.4944</td>
+</tr>
+<tr class="even">
+<td id="T_a8950_row5_col0" class="data row5 col0">C (random graph equivalent)</td>
+<td id="T_a8950_row5_col1" class="data row5 col1">0.0190</td>
+</tr>
+<tr class="odd">
+<td id="T_a8950_row6_col0" class="data row6 col0">Avg. shortest path L</td>
+<td id="T_a8950_row6_col1" class="data row6 col1">3.200</td>
+</tr>
+<tr class="even">
+<td id="T_a8950_row7_col0" class="data row7 col0">L (random graph equivalent)</td>
+<td id="T_a8950_row7_col1" class="data row7 col1">2.701</td>
+</tr>
+<tr class="odd">
+<td id="T_a8950_row8_col0" class="data row8 col0">Small-world coefficient σ</td>
+<td id="T_a8950_row8_col1" class="data row8 col1">21.97</td>
+</tr>
+<tr class="even">
+<td id="T_a8950_row9_col0" class="data row9 col0">Connected components</td>
+<td id="T_a8950_row9_col1" class="data row9 col1">3</td>
+</tr>
+<tr class="odd">
+<td id="T_a8950_row10_col0" class="data row10 col0">LCC fraction of total</td>
+<td id="T_a8950_row10_col1" class="data row10 col1">98.5%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The network is a sparse graph with a mean degree far below the theoretical maximum, yet exhibits a clustering coefficient substantially higher than an equivalent random graph. The small-world coefficient <span class="math inline">\(\sigma \gg 1\)</span> confirms small-world structure: the network is simultaneously locally dense (neighbors of airports tend to also serve each other) and globally compact (any two airports are reachable in just a few hops).</p>
+</section>
+<section id="geographic-map" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="geographic-map"><span class="header-section-number">5.2</span> Geographic Map</h3>
+<div id="cell-fig-map" class="cell" data-execution_count="4">
+<div id="fig-map" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script><script>if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}</script>                <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.4.0.min.js" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" crossorigin="anonymous"></script>                <div id="6a131ff1-e073-48d9-b9ee-237cec94ad37" class="plotly-graph-div" style="height:520px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("6a131ff1-e073-48d9-b9ee-237cec94ad37")) {                    Plotly.newPlot(                        "6a131ff1-e073-48d9-b9ee-237cec94ad37",                        [{"customdata":[["Kodiak Airport","Kodiak",3,0.0055658627087198514,57.75,-152.4940033],["Larsen Bay Airport","Larsen Bay",2,0.0018552875695732837,57.5350990295,-153.977996826],["Karluk Airport","Karluk",1,0.0,57.5671005249,-154.449996948],["Southeast Iowa Regional Airport","Burlington",2,0.0,40.783199310302734,-91.12550354003906],["Chicago O'Hare International Airport","Chicago",149,0.12924919267801036,41.9786,-87.9048],["St Louis Lambert International Airport","St. Louis",56,0.025586681799247318,38.748697,-90.370003],["Decatur Airport","Decatur",2,0.0,39.834598541259766,-88.8656997680664],["Jonesboro Municipal Airport","Jonesboro",1,0.0,35.83169937133789,-90.64640045166016],["Ketchikan International Airport","Ketchikan",7,0.01754067014922986,55.35559845,-131.7140045],["Metlakatla Seaplane Base","Metakatla",1,0.0,55.131001,-131.578003],["Hartsfield Jackson Atlanta International Airport","Atlanta",153,0.09128134385988991,33.6367,-84.428101],["Greenbrier Valley Airport","Lewisburg",2,0.0,37.8582992554,-80.3994979858],["Middle Georgia Regional Airport","Macon",2,0.0,32.69279861450195,-83.64920043945312],["Key Field","Meridian",1,0.0,32.33259963989258,-88.75189971923828],["Northwest Alabama Regional Airport","Muscle Shoals",1,0.0,34.74530029,-87.61019897],["Hattiesburg Laurel Regional Airport","Hattiesburg\u002fLaurel",1,0.0,31.467100143432617,-89.33709716796875],["Tupelo Regional Airport","Tupelo",2,0.0018552875695732839,34.26810073852539,-88.7698974609375],["Key West International Airport","Key West",8,4.216562658121099e-7,24.55610084533691,-81.75959777832031],["Fort Lauderdale Hollywood International Airport","Fort Lauderdale",58,0.010556868794120024,26.072599,-80.152702],["Southwest Florida International Airport","Fort Myers",31,0.000681903998519128,26.53619956970215,-81.75520324707031],["Tampa International Airport","Tampa",63,0.004290897223981574,27.975500106811523,-82.533203125],["Orlando International Airport","Orlando",74,0.01134395191955101,28.429399490356445,-81.30899810791016],["Mid Delta Regional Airport","Greenville",1,0.0,33.4828987121582,-90.98560333251952],["Gainesville Regional Airport","Gainesville",5,0.0,29.6900997162,-82.2717971802],["Jacksonville International Airport","Jacksonville",24,0.000020868087987101262,30.49410057067871,-81.68789672851562],["Pensacola Regional Airport","Pensacola",11,1.5659866222204218e-6,30.473400115967,-87.186599731445],["Tallahassee Regional Airport","Tallahassee",7,0.0,30.396499633789062,-84.35030364990234],["Palm Beach International Airport","West Palm Beach",19,0.0002905893903706001,26.68320083618164,-80.09559631347656],["McCarran International Airport","Las Vegas",113,0.06294525786003705,36.08010101,-115.1520004],["Los Angeles International Airport","Los Angeles",85,0.06470477185848224,33.94250107,-118.4079971],["McGrath Airport","Mcgrath",4,0.0037105751391465673,62.95289993,-155.6060028],["Nikolai Airport","Nikolai",1,0.0,63.0186,-154.358002],["Tatalina LRRS Airport","Tatalina",1,0.0,62.8944015503,-155.977005005],["Anaktuvuk Pass Airport","Anaktuvuk Pass",2,0.0,68.13359833,-151.7429962],["Fairbanks International Airport","Fairbanks",18,0.06539319489250067,64.81510162,-147.8560028],["Bettles Airport","Bettles",3,0.0,66.91390228,-151.529007],["Central Airport","Central",2,0.0,65.57379913,-144.7830048],["Circle City \u002fNew\u002f Airport","Circle",2,0.0,65.830498,-144.076008],["Chalkyitsik Airport","Chalkyitsik",2,0.0,66.6449966431,-143.740005493],["Fort Yukon Airport","Fort Yukon",4,0.00877258674068708,66.57150268554688,-145.25],["Manley Hot Springs Airport","Manley Hot Springs",1,0.0,64.99759674069999,-150.643997192],["Beaver Airport","Beaver",1,0.0,66.362197876,-147.406997681],["Bethel Airport","Bethel",22,0.08149280726452299,60.77980042,-161.8379974],["Eek Airport","Eek",2,0.0,60.21367264,-162.0438843],["Kipnuk Airport","Kipnuk",3,4.6615265567167935e-6,59.932998657199995,-164.031005859],["Quinhagak Airport","Quinhagak",3,0.0018552875695732837,59.7551,-161.845],["Kwethluk Airport","Kwethluk",1,0.0,60.790298461899994,-161.444000244],["Marshall Don Hunter Sr Airport","Marshall",2,0.0,61.8642997742,-162.026000977],["Nightmute Airport","Nightmute",2,0.0,60.471000671387,-164.70100402832],["Napakiak Airport","Napakiak",2,0.0,60.69029998779297,-161.97900390625],["Chefornak Airport","Chefornak",2,0.0,60.1492004395,-164.285995483],["Kongiganak Airport","Kongiganak",2,0.0,59.960800170899994,-162.880996704],["Kwigillingok Airport","Kwigillingok",3,9.276437847866419e-6,59.876499,-163.169005],["Toksook Bay Airport","Toksook Bay",3,4.6615265567167935e-6,60.54140091,-165.0870056],["Napaskiak Airport","Napaskiak",2,0.0,60.70289993,-161.7779999],["Platinum Airport","Port Moller",1,0.0,59.01139831542969,-161.82000732421875],["Ambler Airport","Ambler",3,0.0,67.1063,-157.856989],["Ralph Wien Memorial Airport","Kotzebue",13,0.049721706864564,66.88469696,-162.598999],["Shungnak Airport","Shungnak",3,0.0,66.88809967041,-157.16200256348],["Ted Stevens Anchorage International Airport","Anchorage",34,0.3328889165259562,61.17440032958984,-149.99600219726562],["Wainwright Airport","Wainwright",2,0.0,70.6380004883,-159.994995117],["Atqasuk Edward Burnell Sr Memorial Airport","Atqasuk",2,0.0,70.46730041503906,-157.43600463867188],["Wiley Post Will Rogers Memorial Airport","Barrow",7,0.016462957956138145,71.285402,-156.766008],["Aniak Airport","Aniak",8,0.018358070500927644,61.581600189208984,-159.54299926757812],["Merle K (Mudhole) Smith Airport","Cordova",2,0.00038222901799758215,60.4917984,-145.4779968],["Kenai Municipal Airport","Kenai",1,0.0,60.57310104370117,-151.2449951171875],["Homer Airport","Homer",1,0.0,59.645599365234375,-151.4770050048828],["St Mary's Airport","St Mary's",3,0.013358070500927645,62.0605011,-163.302002],["Unalakleet Airport","Unalakleet",5,0.00836734693877551,63.88840103,-160.798996],["Valdez Pioneer Field","Valdez",1,0.0,61.13389969,-146.2480011],["Chuathbaluk Airport","Chuathbaluk",1,0.0,61.579102,-159.216003],["Holy Cross Airport","Holy Cross",2,0.0018552875695732839,62.18830108642578,-159.77499389648438],["Kalskag Airport","Kalskag",3,0.0002144302216089725,61.53630065917969,-160.34100341796875],["Russian Mission Airport","Russian Mission",4,0.0003014842300556586,61.7788848877,-161.319458008],["Shageluk Airport","Shageluk",1,0.0,62.6922988892,-159.569000244],["Anvik Airport","Anvik",1,0.0,62.646702,-160.190994],["Alakanuk Airport","Alakanuk",1,0.0,62.680042266799994,-164.659927368],["Emmonak Airport","Emmonak",3,0.002152133580705009,62.78609848,-164.4909973],["Hooper Bay Airport","Hooper Bay",3,0.0,61.52389908,-166.1470032],["Kasigluk Airport","Kasigluk",1,0.0,60.87440109,-162.5240021],["Chevak Airport","Chevak",3,0.0,61.5409,-165.6005],["Buckland Airport","Buckland",2,0.0,65.9815979004,-161.149002075],["Deering Airport","Deering",2,0.0,66.0696029663,-162.76600647],["Nuiqsut Airport","Nuiqsut",2,0.0,70.2099990845,-151.005996704],["Point Lay LRRS Airport","Point Lay",1,0.0,69.73290253,-163.0050049],["Barter Island LRRS Airport","Barter Island",2,0.00002164502164502164,70.1340026855,-143.582000732],["Deadhorse Airport","Deadhorse",5,0.002670885186792964,70.19470215,-148.4649963],["Elim Airport","Elim",3,4.6615265567167935e-6,64.61470032,-162.2720032],["Koyuk Alfred Adams Airport","Koyuk",4,0.000018646106226867174,64.9394989014,-161.154006958],["Nome Airport","Nome",15,0.04496753246753246,64.51219940185547,-165.44500732421875],["Kotlik Airport","Kotlik",2,0.000018646106226867174,63.0306015015,-163.533004761],["Edward G. Pitka Sr Airport","Galena",6,0.006954376085747228,64.73619843,-156.9369965],["Ruby Airport","Ruby",3,0.0016901669758812613,64.72720337,-155.4700012],["Huslia Airport","Huslia",5,0.000021132253723782798,65.69789886,-156.3509979],["Kaltag Airport","Kaltag",3,8.039579468150896e-6,64.31909943,-158.7409973],["Nulato Airport","Nulato",3,3.107684371144529e-6,64.729301,-158.074005],["Gambell Airport","Gambell",2,0.0,63.76679992675781,-171.73300170898438],["Savoonga Airport","Savoonga",2,0.0,63.6864013671875,-170.4929962158203],["Golovin Airport","Golovin",3,9.276437847866419e-6,64.5504989624,-163.007003784],["White Mountain Airport","White Mountain",2,0.0,64.689201355,-163.412994385],["Scammon Bay Airport","Scammon Bay",3,0.0,61.845298767100005,-165.570999146],["Koyukuk Airport","Koyukuk",4,0.005111519253658521,64.8760986328,-157.727005005],["Bob Baker Memorial Airport","Kiana",2,0.0,66.9759979248,-160.43699646],["Robert (Bob) Curtis Memorial Airport","Noorvik",2,0.0,66.81790161,-161.0189972],["Shaktoolik Airport","Shaktoolik",3,0.0,64.37110138,-161.223999],["Mountain Village Airport","Mountain Village",1,0.0,62.095401763916016,-163.6820068359375],["Brevig Mission Airport","Brevig Mission",3,0.0,65.3312988281,-166.466003418],["Teller Airport","Teller",2,0.0,65.2404022217,-166.339004517],["Wales Airport","Wales",4,0.000018552875695732837,65.622593,-168.095],["Kivalina Airport","Kivalina",2,0.0,67.73619842529297,-164.56300354003906],["Togiak Airport","Togiak Village",1,0.0,59.05279922485352,-160.39700317382812],["Mekoryuk Airport","Mekoryuk",2,0.0,60.37139892578125,-166.27099609375],["Kobuk Airport","Kobuk",3,0.0,66.9123001099,-156.897003174],["Shishmaref Airport","Shishmaref",2,0.0,66.249604,-166.089112],["Selawik Airport","Selawik",1,0.0,66.60009766,-159.9859924],["Noatak Airport","Noatak",2,0.0,67.56610107421875,-162.97500610351562],["Sleetmute Airport","Sleetmute",1,0.0,61.7005004883,-157.166000366],["St Michael Airport","St. Michael",1,0.0,63.49010086,-162.1100006],["Akhiok Airport","Akhiok",1,0.0,56.9387016296,-154.182998657],["Cape Lisburne LRRS Airport","Cape Lisburne",1,0.0,68.87509918,-166.1100006],["Tin City Long Range Radar Station Airport","Tin City",2,0.0,65.56310272,-167.9219971],["Allakaket Airport","Allakaket",3,1.8552875695732837e-6,66.5518035889,-152.621994019],["Hughes Airport","Hughes",3,0.001701298701298701,66.04109955,-154.2630005],["Arctic Village Airport","Arctic Village",1,0.0,68.1147,-145.578995],["Venetie Airport","Venetie",2,0.006846011131725417,67.0086975098,-146.365997314],["Minchumina Airport","Lake Minchumina",1,0.0,63.886002,-152.302002],["Kalamazoo Battle Creek International Airport","Kalamazoo",4,0.0,42.234901428222656,-85.5521011352539],["Lovell Field","Chattanooga",8,0.00036081169669210597,35.035301208496094,-85.20379638671875],["The Eastern Iowa Airport","Cedar Rapids",11,0.001025988598139212,41.88470077514648,-91.71080017089844],["Yeager Airport","Charleston",9,7.027354790675266e-6,38.37310028076172,-81.59320068359375],["Cincinnati Northern Kentucky International Airport","Cincinnati",43,0.004223614961524895,39.0488014221,-84.6678009033],["Evansville Regional Airport","Evansville",4,0.0,38.0369987488,-87.5324020386],["Fort Wayne International Airport","Fort Wayne",10,0.0006188638624932378,40.97850037,-85.19509888],["Piedmont Triad International Airport","Greensboro",14,0.0007100588425778019,36.097801208496094,-79.93730163574219],["Greenville Spartanburg International Airport","Greenville",20,0.0010212448674163741,34.8956985474,-82.2189025879],["Capital City Airport","Lansing",6,0.00015117843613262393,42.77870178222656,-84.58740234375],["Blue Grass Airport","Lexington KY",13,0.00068344225808426,38.0364990234375,-84.60590362548828],["MBS International Airport","Saginaw",4,0.0,43.532901763916016,-84.07959747314453],["Minneapolis-St Paul International\u002fWold-Chamberlain Airport","Minneapolis",117,0.08079312396787573,44.882,-93.221802],["Roanoke–Blacksburg Regional Airport","Roanoke VA",9,0.0003345107985776113,37.3255,-79.975403],["Syracuse Hancock International Airport","Syracuse",15,0.000456666232018471,43.11119842529297,-76.1063003540039],["McGhee Tyson Airport","Knoxville",17,0.0010603332263121976,35.81100082,-83.9940033],["Northwest Arkansas Regional Airport","Bentonville",14,0.0005523101089469956,36.281898,-94.306801],["Detroit Metropolitan Wayne County Airport","Detroit",114,0.03158486133794613,42.212398529052734,-83.35340118408203],["Louis Armstrong New Orleans International Airport","New Orleans",38,0.0003620390062026218,29.99340057373047,-90.25800323486328],["Grand Forks International Airport","Grand Forks",5,0.001985451115405785,47.949299,-97.176102],["Thief River Falls Regional Airport","Thief River Falls",1,0.0,48.06570053,-96.18499756],["John F Kennedy International Airport","New York",57,0.0020178471296601586,40.63980103,-73.77890015],["La Guardia Airport","New York",65,0.0023323178240620916,40.77719879,-73.87259674],["Harrisburg International Airport","Harrisburg",11,0.0007326868685070083,40.1935005188,-76.7633972168],["Memphis International Airport","Memphis",32,0.004671482772664499,35.04240036010742,-89.97669982910156],["Nantucket Memorial Airport","Nantucket",6,0.0022136302386022615,41.25310135,-70.06020355],["General Edward Lawrence Logan International Airport","Boston",70,0.037594745079730964,42.36429977,-71.00520325],["New Bedford Regional Airport","New Bedford",3,0.0,41.67610168457031,-70.95690155029297],["Barnstable Municipal Boardman Polando Field","Barnstable",3,1.951917130488559e-6,41.66930008,-70.28040314],["Martha's Vineyard Airport","Vineyard Haven MA",4,0.00035370445010504453,41.3931007385,-70.6143035889],["Albany International Airport","Albany",19,0.003714710556126317,42.74829864501953,-73.80169677734375],["Massena International Richards Field","Massena",1,0.0,44.93579864501953,-74.84559631347656],["Ogdensburg International Airport","Ogdensburg",1,0.0,44.6819000244,-75.46549987790002],["Augusta State Airport","Augusta",1,0.0,44.320598602299995,-69.7973022461],["Hancock County-Bar Harbor Airport","Bar Harbor",1,0.0,44.45000076,-68.3615036],["Billings Logan International Airport","Billings",12,0.009324486796144714,45.80770111083984,-108.54299926757812],["Dawson Community Airport","Glendive",1,0.0,47.13869858,-104.8069992],["Wokal Field Glasgow International Airport","Glasgow",1,0.0,48.212502,-106.614998],["Havre City County Airport","Havre",1,0.0,48.54299927,-109.762001],["L M Clayton Airport","Wolf Point",1,0.0,48.0945014954,-105.574996948],["Sidney - Richland Regional Airport","Sidney",1,0.0,47.706902,-104.193001],["Lebanon Municipal Airport","Lebanon",2,1.951917130488559e-6,43.626098632799994,-72.30419921880001],["Provincetown Municipal Airport","Provincetown",1,0.0,42.0718994141,-70.2213973999],["Knox County Regional Airport","Rockland",1,0.0,44.06010056,-69.09919739],["Rutland - Southern Vermont Regional Airport","Rutland",1,0.0,43.52939987,-72.94960022],["Adirondack Regional Airport","Saranac Lake",1,0.0,44.38529968261719,-74.2061996459961],["Cape Girardeau Regional Airport","Cape Girardeau",1,0.0,37.22529983520508,-89.57080078125],["Westchester County Airport","White Plains",16,0.00724244082336619,41.06700134277344,-73.70760345458984],["Kirksville Regional Airport","Kirksville",1,0.0,40.09349822998047,-92.5448989868164],["Williamson County Regional Airport","Marion",1,0.0,37.75500107,-89.01110077],["Owensboro Daviess County Airport","Owensboro",2,0.000039066088653886466,37.74010086,-87.16680145],["Waynesville-St. Robert Regional Forney field","Fort Leonardwood",1,0.0,37.74160004,-92.14070129],["Quincy Regional Baldwin Field","Quincy",1,0.0,39.94269943,-91.19460297],["Lehigh Valley International Airport","Allentown",9,0.0003358355530253214,40.652099609375,-75.44080352783203],["Charlotte Douglas International Airport","Charlotte",110,0.04841077475433183,35.2140007019043,-80.94309997558594],["Philadelphia International Airport","Philadelphia",88,0.0204503885304452,39.87189865112305,-75.24109649658203],["Abilene Regional Airport","Abilene",1,0.0,32.4113006592,-99.6819000244],["Dallas Fort Worth International Airport","Dallas-Fort Worth",138,0.10188781440551267,32.896801,-97.038002],["Albuquerque International Sunport","Albuquerque",23,0.008767540525664969,35.040199,-106.609001],["Phoenix Sky Harbor International Airport","Phoenix",77,0.041903198140710696,33.43429946899414,-112.01200103759766],["Waco Regional Airport","Waco",1,0.0,31.611299514770508,-97.23049926757812],["Alexandria International Airport","Alexandria",3,0.0,31.32740020751953,-92.54979705810548],["Augusta Regional At Bush Field","Bush Field",3,0.0,33.36989974975586,-81.9645004272461],["Ronald Reagan Washington National Airport","Washington",85,0.014610170435910504,38.8521,-77.037697],["Waterloo Regional Airport","Waterloo",1,0.0,42.557098388671875,-92.40029907226562],["Rick Husband Amarillo International Airport","Amarillo",6,0.000017162922193005932,35.219398,-101.706001],["Watertown International Airport","Watertown",2,0.0,43.99190139770508,-76.02169799804688],["Miami International Airport","Miami",49,0.006549188224795098,25.79319953918457,-80.29060363769531],["Austin Bergstrom International Airport","Austin",39,0.0013947383196995038,30.194499969482425,-97.6698989868164],["Asheville Regional Airport","Asheville",8,0.00031520906573947576,35.43619918823242,-82.54180145263672],["Wilkes Barre Scranton International Airport","Scranton",6,0.00011846507198855612,41.338500976599995,-75.72339630130001],["Bradley International Airport","Windsor Locks",23,0.00007021428466847159,41.9388999939,-72.68319702149999],["Pittsburgh International Airport","Pittsburgh",33,0.0000637251547714967,40.49150085,-80.23290253],["Meadows Field","Bakersfield",5,0.0,35.43360138,-119.0569992],["Greater Binghamton\u002fEdwin A Link field","Binghamton",3,0.0,42.20869827,-75.97979736],["Bangor International Airport","Bangor",6,0.00009473265354209478,44.80739974975586,-68.8281021118164],["Birmingham-Shuttlesworth International Airport","Birmingham",19,0.00003826939167957354,33.56290054,-86.75350189],["Central Illinois Regional Airport at Bloomington-Normal","Bloomington",8,0.0002983000285818893,40.47710037,-88.91590118],["Nashville International Airport","Nashville",46,0.009456315472657146,36.1245002746582,-86.6781997680664],["Boise Air Terminal\u002fGowen Field","Boise",16,0.0001885845259165096,43.5644,-116.223],["Buffalo Niagara International Airport","Buffalo",20,8.863420040833995e-6,42.94049835,-78.73220062],["Portland International Airport","Portland",54,0.019890314048257935,45.58869934,-122.5979996],["Richmond International Airport","Richmond",18,3.5256882057935414e-6,37.50519943237305,-77.3197021484375],["Greater Rochester International Airport","Rochester",17,5.858038262078908e-6,43.118900299072266,-77.67240142822266],["San Diego International Airport","San Diego",50,0.004229246468115766,32.7336006165,-117.190002441],["Seattle Tacoma International Airport","Seattle",75,0.10995918123718844,47.449001,-122.308998],["Southeast Texas Regional Airport","Beaumont",1,0.0,29.9507999420166,-94.02069854736328],["Brownsville South Padre Island International Airport","Brownsville",2,0.0,25.90679931640625,-97.4259033203125],["Baton Rouge Metropolitan Airport","Baton Rouge",4,0.0,30.533199,-91.149597],["Burlington International Airport","Burlington",10,0.00015934706590041902,44.4719009399,-73.15329742429999],["Bob Hope Airport","Burbank",12,0.000385799408003749,34.20069885253906,-118.35900115966795],["Baltimore\u002fWashington International Thurgood Marshall Airport","Baltimore",63,0.003869843729565165,39.1754,-76.668297],["Columbia Metropolitan Airport","Columbia",10,3.271246706467925e-7,33.93880081176758,-81.11949920654297],["Akron Canton Regional Airport","Akron",11,0.0,40.91609954833984,-81.44219970703125],["Charlottesville Albemarle Airport","Charlottesville VA",6,0.0,38.13859939575195,-78.4529037475586],["Charleston Air Force Base-International Airport","Charleston",20,0.000019066836098803178,32.89860153,-80.04049683],["Cleveland Hopkins International Airport","Cleveland",53,0.025347000866089507,41.4117012024,-81.8498001099],["Easterwood Field","College Station",2,0.0,30.58860016,-96.36380005],["John Glenn Columbus International Airport","Columbus",31,0.00016217464940986349,39.998001,-82.891899],["Daytona Beach International Airport","Daytona Beach",2,0.0,29.179899,-81.058098],["James M Cox Dayton International Airport","Dayton",16,1.0867331825106594e-6,39.902400970458984,-84.21939849853516],["Denver International Airport","Denver",149,0.1524149094609008,39.861698150635,-104.672996521],["Des Moines International Airport","Des Moines",17,0.0014137023892816976,41.53400039672851,-93.66310119628906],["Coastal Carolina Regional Airport","New Bern",2,0.0,35.0730018616,-77.04290008539999],["Newark Liberty International Airport","Newark",72,0.003377957241053087,40.692501068115234,-74.168701171875],["Fayetteville Regional Grannis Field","Fayetteville",4,3.271246706467925e-7,34.9911994934082,-78.88030242919922],["Florence Regional Airport","Florence",1,0.0,34.18539810180664,-79.7238998413086],["Gulfport Biloxi International Airport","Gulfport",4,0.0,30.40730094909668,-89.07009887695312],["Hilton Head Airport","Hilton Head Island",2,0.0,32.2243995667,-80.6975021362],["Huntsville International Carl T Jones Field","Huntsville",9,3.271246706467925e-7,34.637199401855,-86.775100708008],["Tri-State\u002fMilton J. Ferguson Field","Huntington",4,0.000057229905881173565,38.36669922,-82.55799866],["Washington Dulles International Airport","Washington",81,0.03531238679003697,38.94449997,-77.45580292],["George Bush Intercontinental Houston Airport","Houston",101,0.034024904361588365,29.984399795532227,-95.34140014648438],["Wilmington International Airport","Wilmington",5,0.0,34.270599365234375,-77.90260314941406],["Indianapolis International Airport","Indianapolis",32,0.00027222615345782564,39.7173,-86.294403],["Jackson-Medgar Wiley Evers International Airport","Jackson",9,0.000012492970162416394,32.3111991882,-90.0758972168],["Bill & Hillary Clinton National Airport\u002fAdams Field","Little Rock",17,0.0005567271006768332,34.729400634799994,-92.2242965698],["Lynchburg Regional Preston Glenn Field","Lynchburg",1,0.0,37.326698303222656,-79.20040130615234],["Kansas City International Airport","Kansas City",41,0.008416698515532938,39.2976,-94.713898],["Montgomery Regional (Dannelly Field) Airport","MONTGOMERY",3,0.0,32.30059814,-86.39399719],["Manchester-Boston Regional Airport","Manchester NH",14,0.000011213827602768449,42.932598,-71.435699],["General Mitchell International Airport","Milwaukee",28,0.00011765989226225982,42.94720077514648,-87.89659881591797],["Melbourne International Airport","Melbourne",2,0.0,28.102800369262695,-80.64530181884766],["Mobile Regional Airport","Mobile",5,0.0,30.691200256348,-88.242797851562],["Myrtle Beach International Airport","Myrtle Beach",21,0.007107518204516488,33.6796989441,-78.9282989502],["Albert J Ellis Airport","Jacksonville NC",3,0.0,34.8292007446,-77.61209869380001],["Eppley Airfield","Omaha",20,0.00005866208479724732,41.3032,-95.894096],["Norfolk International Airport","Norfolk",19,0.000018597272997549458,36.89459991455078,-76.20120239257812],["Pitt Greenville Airport","Greenville",1,0.0,35.6352005,-77.38529968],["Newport News Williamsburg International Airport","Newport News",5,0.00016004680054724707,37.13190079,-76.49299622],["Theodore Francis Green State Airport","Providence",19,0.00003665608211821915,41.732601,-71.420403],["Portland International Jetport Airport","Portland",12,6.147096353707095e-6,43.64619827,-70.30930328],["Raleigh Durham International Airport","Raleigh-durham",36,0.00029058725120731285,35.877601623535156,-78.7874984741211],["San Antonio International Airport","San Antonio",30,0.00046710502225404046,29.533700942993164,-98.46980285644533],["Savannah Hilton Head International Airport","Savannah",13,2.1453735419500896e-6,32.12760162,-81.20210266],["Salisbury Ocean City Wicomico Regional Airport","Salisbury",2,0.0,38.34049987792969,-75.51029968261719],["Louisville International Standiford Field","Louisville",23,0.000023389206911008596,38.1744,-85.736],["San Francisco International Airport","San Francisco",71,0.026460147303905827,37.61899948120117,-122.375],["Salt Lake City International Airport","Salt Lake City",85,0.06975172765588245,40.78839874267578,-111.97799682617188],["Sacramento International Airport","Sacramento",28,0.0012940381464212251,38.69540023803711,-121.59100341796876],["Sarasota Bradenton International Airport","Sarasota",6,4.757147614290471e-7,27.39539909362793,-82.55439758300781],["Tri-Cities Regional TN\u002fVA Airport","BRISTOL",4,0.00010817044055331154,36.475201,-82.407401],["Destin-Ft Walton Beach Airport","Valparaiso",5,0.0,30.4832,-86.525398],["University of Illinois Willard Airport","Champaign",2,0.0,40.03919983,-88.27809906],["City of Colorado Springs Municipal Airport","Colorado Springs",11,0.0000168936526341165,38.805801,-104.700996],["Columbia Regional Airport","Columbia",2,0.0,38.81809997558594,-92.21959686279295],["Corpus Christi International Airport","Corpus Christi",4,2.830212552292339e-6,27.77039909362793,-97.5011978149414],["Central Wisconsin Airport","Wassau",3,0.0,44.7775993347,-89.6668014526],["Dubuque Regional Airport","Dubuque IA",1,0.0,42.40200043,-90.70950317],["Long Island Mac Arthur Airport","Islip",11,0.00008976859931825985,40.79520035,-73.10019684],["Durango La Plata County Airport","Durango",3,0.0,37.1515007019,-107.753997803],["El Paso International Airport","El Paso",13,0.000020578885644676217,31.80719948,-106.3779984],["Hector International Airport","Fargo",10,0.0012393475940629033,46.92070007324219,-96.81580352783205],["Fresno Yosemite International Airport","Fresno",10,0.0,36.77619934082031,-119.71800231933594],["Joe Foss Field Airport","Sioux Falls",9,0.000834842798136563,43.5820007324,-96.741897583],["Fort Smith Regional Airport","Fort Smith",2,0.0,35.33660125732422,-94.36740112304688],["Garden City Regional Airport","Garden City",1,0.0,37.9275016785,-100.723999023],["East Texas Regional Airport","Longview",1,0.0,32.38399887084961,-94.71150207519533],["Grand Junction Regional Airport","Grand Junction",6,0.0,39.1223983765,-108.527000427],["Central Nebraska Regional Airport","Grand Island",3,0.00002043686977191543,40.967498779296875,-98.30960083007812],["Robert Gray  Army Air Field Airport","Killeen",3,0.0,31.067199707,-97.8289031982],["Gerald R. Ford International Airport","Grand Rapids",20,0.0015323857453669492,42.88079834,-85.52279663],["Daniel K Inouye International Airport","Honolulu",28,0.014817183153478394,21.32062,-157.924228],["William P Hobby Airport","Houston",49,0.0036641403420472844,29.64539909,-95.27890015],["Wichita Eisenhower National Airport","Wichita",12,0.00016230498986703916,37.649899,-97.433098],["Joplin Regional Airport","Joplin",1,0.0,37.151798248291016,-94.49829864501952],["Lawton Fort Sill Regional Airport","Lawton",1,0.0,34.5676994324,-98.4166030884],["Lubbock Preston Smith International Airport","Lubbock",8,0.0003403949618342089,33.663601,-101.822998],["Lake Charles Regional Airport","Lake Charles",2,0.0,30.126100540161133,-93.22329711914062],["Lafayette Regional Airport","Lafayette",3,0.0,30.20529938,-91.98760223],["Laredo International Airport","Laredo",3,0.0,27.543800354003903,-99.46160125732422],["Midland International Airport","Midland",7,0.00007656654548265388,31.9424991607666,-102.2020034790039],["Mc Allen Miller International Airport","Mcallen",3,0.0,26.17580032,-98.23860168],["Manhattan Regional Airport","Manhattan",2,0.0,39.14099884033203,-96.6707992553711],["Quad City International Airport","Moline",10,0.0008756914516742737,41.44850158691406,-90.50749969482422],["Monroe Regional Airport","Monroe",3,0.0,32.51089859008789,-92.0376968383789],["Dane County Regional Truax Field","Madison",11,5.776300419157562e-6,43.13990020751953,-89.3375015258789],["Kahului Airport","Kahului",20,0.006344231554016017,20.8986,-156.429993],["Will Rogers World Airport","Oklahoma City",22,0.001157269084138709,35.39310073852539,-97.60070037841795],["Ontario International Airport","Ontario",13,0.000010478948581018835,34.055999755859375,-117.60099792480467],["General Wayne A. Downing Peoria International Airport","Peoria",10,0.000655646854072408,40.664199829100006,-89.6932983398],["Palm Springs International Airport","Palm Springs",14,0.00021463149496926527,33.8297004699707,-116.50700378417967],["Rapid City Regional Airport","Rapid City",7,0.00005977914995917763,44.0452995300293,-103.05699920654295],["Reno Tahoe International Airport","Reno",14,0.000037613093644380215,39.49909973144531,-119.76799774169922],["Roswell International Air Center Airport","Roswell",1,0.0,33.30160140991211,-104.53099822998048],["Santa Fe Municipal Airport","Santa Fe",3,0.0,35.617099762,-106.088996887],["Springfield Branson National Airport","Springfield",9,0.0008332378224830401,37.24570084,-93.38860321],["Shreveport Regional Airport","Shreveport",5,0.0,32.446602,-93.8256],["Norman Y. Mineta San Jose International Airport","San Jose",27,0.0006714852188648871,37.362598,-121.929001],["San Angelo Regional Mathis Field","San Angelo",1,0.0,31.35770034790039,-100.49600219726562],["John Wayne Airport-Orange County Airport","Santa Ana",18,0.0005268121716438675,33.67570114,-117.8679962],["Abraham Lincoln Capital Airport","Springfield",4,0.00012866086425250193,39.84410095,-89.67790222],["Sheppard Air Force Base-Wichita Falls Municipal Airport","Wichita Falls",1,0.0,33.9888,-98.491898],["Tulsa International Airport","Tulsa",18,0.0007704491623941823,36.19839859008789,-95.88809967041016],["Tucson International Airport","Tucson",16,0.000011768648057380948,32.1161003112793,-110.94100189208984],["Texarkana Regional Webb Field","Texarkana",1,0.0,33.45370101928711,-93.99099731445312],["Tyler Pounds Regional Airport","Tyler",2,0.0,32.35409927368164,-95.40239715576172],["Elmira Corning Regional Airport","Elmira",5,0.00017102710407405124,42.1599006652832,-76.8916015625],["Erie International Tom Ridge Field","Erie",3,0.0,42.0831270134,-80.1738667488],["Mahlon Sweet Field","Eugene",9,0.0000833933290763914,44.12459945678711,-123.21199798583984],["Flagstaff Pulliam Airport","Flagstaff",1,0.0,35.13850021,-111.6709976],["Bishop International Airport","Flint",8,0.0,42.96540069580078,-83.74359893798828],["Spokane International Airport","Spokane",10,0.0,47.61989974975586,-117.53399658203124],["Austin Straubel International Airport","Green Bay",4,0.0,44.48509979248047,-88.12960052490234],["Metropolitan Oakland International Airport","Oakland",33,0.0018407476587440122,37.721298,-122.221001],["Tweed New Haven Airport","New Haven",1,0.0,41.26369858,-72.88680267],["Williamsport Regional Airport","Williamsport",1,0.0,41.241798400878906,-76.92109680175781],["Ithaca Tompkins Regional Airport","Ithaca",3,0.0,42.49100112915039,-76.4583969116211],["Juneau International Airport","Juneau",12,0.022445220808035383,58.35499954223633,-134.5760040283203],["Ellison Onizuka Kona International At Keahole Airport","Kona",10,0.0002883483909060625,19.738783,-156.045603],["Lihue Airport","Lihue",10,2.0717895807630193e-6,21.97599983215332,-159.33900451660156],["Rogue Valley International Medford Airport","Medford",7,0.0,42.37419891357422,-122.8730010986328],["Mammoth Yosemite Airport","Mammoth Lakes",1,0.0,37.62409973,-118.8379974],["Monterey Peninsula Airport","Monterey",6,0.0,36.58700180053711,-121.84300231933594],["Roberts Field","Redmond-Bend",6,0.0,44.2541008,-121.1500015],["Charles M. Schulz Sonoma County Airport","Santa Rosa",4,0.0,38.50899887,-122.8130035],["Long Beach \u002fDaugherty Field\u002f Airport","Long Beach",12,0.000023659132624062155,33.81769943,-118.1520004],["La Crosse Municipal Airport","La Crosse",2,0.0,43.879002,-91.256699],["Sawyer International Airport","Gwinn",2,0.0,46.3535995483,-87.395401001],["Rochester International Airport","Rochester",3,0.000015771108191017043,43.90829849243164,-92.5],["Sioux Gateway Col. Bud Day Field","Sioux City",1,0.0,42.40259933,-96.38439941],["Toledo Express Airport","Toledo",4,0.0001384841082983174,41.58679962,-83.80780029],["Cherry Capital Airport","Traverse City",3,0.0,44.74140167236328,-85.58219909667969],["University Park Airport","State College Pennsylvania",4,0.0,40.8493003845,-77.84870147710001],["Stewart International Airport","Newburgh",5,0.000060431355700922185,41.50410079956055,-74.10479736328125],["Santa Barbara Municipal Airport","Santa Barbara",6,0.0,34.42620087,-119.8399963],["San Luis County Regional Airport","San Luis Obispo",3,0.0,35.236801147499996,-120.641998291],["Yuma MCAS\u002fYuma International Airport","Yuma",2,0.0,32.65660095,-114.6060028],["Southwest Georgia Regional Airport","Albany",1,0.0,31.535499572753903,-84.19450378417969],["Appleton International Airport","Appleton",7,0.00025764684500810954,44.258098602299995,-88.5190963745],["Brunswick Golden Isles Airport","Brunswick",1,0.0,31.258800506591797,-81.46649932861328],["Columbus Metropolitan Airport","Columbus",1,0.0,32.516300201416016,-84.93890380859375],["Dallas Love Field","Dallas",24,0.001454944313312809,32.847099,-96.851799],["Dothan Regional Airport","Dothan",1,0.0,31.321300506591797,-85.44960021972656],["Northwest Florida Beaches International Airport","Panama City",5,0.0,30.357106,-85.795414],["Golden Triangle Regional Airport","Columbus Mississippi",1,0.0,33.450298309299995,-88.5914001465],["Chicago Midway International Airport","Chicago",67,0.007708441979401405,41.785999,-87.752403],["South Bend Regional Airport","South Bend",9,0.0006131257872846453,41.70869827270508,-86.31729888916016],["Valdosta Regional Airport","Valdosta",1,0.0,30.782499313354492,-83.27670288085938],["Adak Airport","Adak Island",1,0.0,51.87799835205078,-176.64599609375],["King Salmon Airport","King Salmon",8,0.025955473098330243,58.67679977,-156.6490021],["Walla Walla Regional Airport","Walla Walla",1,0.0,46.09489822,-118.288002],["Cold Bay Airport","Cold Bay",4,0.0055658627087198514,55.20610046386719,-162.72500610351562],["Dillingham Airport","Dillingham",2,0.0,59.04470062,-158.5050049],["Sand Point Airport","Sand Point",1,0.0,55.314998626708984,-160.5229949951172],["St Paul Island Airport","St. Paul Island",2,0.0,57.16730117797851,-170.22000122070312],["St George Airport","Point Barrow",2,0.0,56.5783004761,-169.662002563],["Bellingham International Airport","Bellingham",9,0.00006442714666017401,48.79280090332031,-122.53800201416016],["Lewiston Nez Perce County Airport","Lewiston",4,0.000040675269260725186,46.3745002746582,-117.01499938964844],["Plattsburgh International Airport","Plattsburgh",5,0.0001890284694175998,44.650901794433594,-73.46810150146484],["Northern Maine Regional Airport at Presque Isle","Presque Isle",1,0.0,46.68899918,-68.0447998],["Gallatin Field","Bozeman",7,0.00005871161570799592,45.77750015,-111.1529999],["Yakutat Airport","Yakutat",2,0.000011440940012368584,59.5032997131,-139.660003662],["Pangborn Memorial Airport","Wenatchee",1,0.0,47.3988990784,-120.207000732],["Glacier Park International Airport","Kalispell",5,0.0,48.31050109863281,-114.25599670410156],["Great Falls International Airport","Great Falls",7,0.000054523401273735634,47.48199844,-111.3710022],["Helena Regional Airport","Helena",5,0.0,46.6068000793457,-111.98300170898438],["Petersburg James A Johnson Airport","Petersburg",2,0.0004446505875077305,56.80170059,-132.9450073],["Sitka Rocky Gutierrez Airport","Sitka",2,0.0,57.04710006713867,-135.36199951171875],["Wrangell Airport","Wrangell",2,4.6615265567167935e-6,56.48429871,-132.3699951],["Pullman Moscow Regional Airport","Pullman",2,0.0,46.7439,-117.110001],["Missoula International Airport","Missoula",7,0.00004804894827829692,46.91630173,-114.0910034],["Tri Cities Airport","Pasco",8,0.00006803833702828251,46.26470184326172,-119.11900329589844],["Yakima Air Terminal McAllister Field","Yakima",1,0.0,46.56819916,-120.5439987],["Worcester Regional Airport","Worcester",2,0.0,42.26729965209961,-71.87570190429688],["Aberdeen Regional Airport","Aberdeen",1,0.0,45.449100494384766,-98.42179870605467],["Alpena County Regional Airport","Alpena",2,0.0,45.0780983,-83.56030273],["Bismarck Municipal Airport","Bismarck",5,0.00024428707081689406,46.772701263427734,-100.74600219726562],["Bemidji Regional Airport","Bemidji",1,0.0,47.50939941,-94.93370056],["Brainerd Lakes Regional Airport","Brainerd",2,0.0,46.39830017,-94.13809967],["Falls International Airport","International Falls",2,0.0,48.566200256347656,-93.4030990600586],["Bert Mooney Airport","Butte",1,0.0,45.95479965209961,-112.49700164794922],["Cedar City Regional Airport","Cedar City",1,0.0,37.70100021362305,-113.0989990234375],["Chippewa County International Airport","Sault Ste Marie",1,0.0,46.25080108642578,-84.47239685058594],["Canyonlands Field","Moab",1,0.0,38.75500107,-109.7549973],["Yellowstone Regional Airport","Cody",2,0.0,44.520198822,-109.024002075],["Casper-Natrona County International Airport","Casper",3,0.0,42.908001,-106.463997],["Dickinson Theodore Roosevelt Regional Airport","Dickinson",2,0.0,46.7974014282,-102.802001953],["Duluth International Airport","Duluth",4,0.000015771108191017043,46.8420982361,-92.1936035156],["Delta County Airport","Escanaba",1,0.0,45.7226982117,-87.0936965942],["Pellston Regional Airport of Emmet County Airport","Pellston",1,0.0,45.57089996,-84.79669952],["Elko Regional Airport","Elko",1,0.0,40.82490158081055,-115.79199981689452],["Gillette Campbell County Airport","Gillette",3,0.0,44.3488998413,-105.539001465],["Southwest Wyoming Regional Airport","Rock Springs",3,0.0,41.5942,-109.065001],["Range Regional Airport","Hibbing",1,0.0,47.38660049,-92.83899689],["Idaho Falls Regional Airport","Idaho Falls",4,0.00002349192019629033,43.514599,-112.070999],["Ford Airport","Iron Mountain",2,0.0,45.8184013367,-88.1145019531],["Rhinelander Oneida County Airport","Rhinelander",2,0.0,45.63119888305664,-89.46749877929688],["Sloulin Field International Airport","Williston",2,0.0,48.177898407,-103.641998291],["Jackson Hole Airport","Jacksn Hole",2,0.0,43.6072998046875,-110.73799896240234],["Lincoln Airport","Lincoln",3,0.0,40.85100173950195,-96.75920104980467],["Minot International Airport","Minot",4,0.000016560621085845457,48.2593994140625,-101.27999877929688],["Pocatello Regional Airport","Pocatello",1,0.0,42.9098014831543,-112.59600067138672],["St George Municipal Airport","Saint George",2,0.0,37.036389,-113.510306],["Joslin Field Magic Valley Regional Airport","Twin Falls",1,0.0,42.4818,-114.487999],["Vernal Regional Airport","Vernal",1,0.0,40.4408989,-109.5100021],["Alliance Municipal Airport","Alliance",2,0.0,42.0531997681,-102.804000854],["Chadron Municipal Airport","Chadron",2,0.0,42.837600708,-103.095001221],["San Luis Valley Regional Bergman Field","Alamosa",2,0.0,37.434898,-105.866997],["Four Corners Regional Airport","Farmington",3,0.000260819698374969,36.7411994934,-108.230003357],["Trenton Mercer Airport","Trenton",14,0.0018592864472772468,40.27669906616211,-74.8134994506836],["Watertown Regional Airport","Watertown",2,0.00012034502416791755,44.91400146,-97.15470123],["Pierre Regional Airport","Pierre",3,0.0020872348485370977,44.38270187,-100.2860031],["Branson Airport","Branson",4,4.411652780549574e-6,36.532082,-93.200544],["Cheyenne Regional Jerry Olson Field","Cheyenne",2,0.0018552875695732837,41.15570068,-104.8119965],["Worland Municipal Airport","Worland",1,0.0,43.9656982421875,-107.95099639892578],["Dodge City Regional Airport","Dodge City",2,0.0,37.76340103149414,-99.9655990600586],["Liberal Mid-America Regional Airport","Liberal",2,0.0,37.0442009,-100.9599991],["New Castle Airport","Wilmington",6,0.0,39.67869949,-75.60649872],["Show Low Regional Airport","Show Low",2,4.268797213110616e-6,34.265499115,-110.005996704],["Huron Regional Airport","Huron",1,0.0,44.38520050048828,-98.22850036621094],["Page Municipal Airport","Page",3,0.006871090144600554,36.92610168,-111.447998],["Northeast Florida Regional Airport","St. Augustine Airport",1,0.0,29.9592,-81.339798],["Valley International Airport","Harlingen",7,0.000011749773801146072,26.228500366210938,-97.65440368652344],["Charlotte County Airport","Punta Gorda",18,0.0005004547927956877,26.92020035,-81.9905014],["St Petersburg Clearwater International Airport","St. Petersburg",31,0.003253090246783532,27.91020012,-82.68740082],["Orlando Sanford International Airport","Sanford",48,0.016672177580312964,28.777599334716797,-81.23750305175781],["Phoenix-Mesa-Gateway Airport","Mesa",32,0.00333326893510763,33.30780029,-111.6549988],["Ogden Hinckley Airport","Ogden",1,0.0,41.195899963379,-112.0120010376],["Provo Municipal Airport","Provo",3,0.000018961200496677353,40.219200134277,-111.72299957275],["Chicago Rockford International Airport","Rockford",5,0.00019437396488194443,42.19540023803711,-89.09719848632812],["St Cloud Regional Airport","Saint Cloud",2,0.00001105740946577843,45.546600341796875,-94.05989837646484],["Scott AFB\u002fMidamerica Airport","Belleville",1,0.0,38.5452,-89.835197],["North Central West Virginia Airport","Clarksburg",3,0.00018458505630852771,39.2966003418,-80.2281036377],["Hagerstown Regional Richard A Henson Field","Hagerstown",2,0.00001873984709597168,39.707901,-77.72949982],["Niagara Falls International Airport","Niagara Falls",5,0.0000420427710889623,43.1072998046875,-78.94619750976562],["Stockton Metropolitan Airport","Stockton",1,0.0,37.894199371338,-121.2379989624],["Santa Maria Pub\u002fCapt G Allan Hancock Field","Santa Maria",2,0.0,34.89889908,-120.4570007],["Rickenbacker International Airport","Columbus",2,3.885188120172113e-6,39.813801,-82.927803],["Youngstown Warren Regional Airport","Youngstown",4,0.000020770975210120217,41.26070023,-80.67910004],["Portsmouth International at Pease Airport","Portsmouth",1,0.0,43.0778999329,-70.8233032227],["Pilot Point Airport","Pilot Point",1,0.0,57.5803985596,-157.572006226],["South Naknek Nr 2 Airport","South Naknek",2,0.0,58.7033996582,-157.007995605],["False Pass Airport","False Pass",1,0.0,54.8474006652832,-163.41000366210938],["King Cove Airport","King Cove",1,0.0,55.11629867553711,-162.26600646972656],["Nelson Lagoon Airport","Nelson Lagoon",1,0.0,56.007499694824,-161.16000366211],["Egegik Airport","Egegik",2,0.0,58.1855010986,-157.375],["Igiugig Airport","Igiugig",1,0.0,59.32400131225586,-155.90199279785156],["Perryville Airport","Perryville",1,0.0,55.905998,-159.162993],["Port Heiden Airport","Port Heiden",1,0.0,56.95909881591797,-158.63299560546875],["Hilo International Airport","Hilo",3,0.0,19.721399307250977,-155.04800415039062],["Lanai Airport","Lanai",3,0.0,20.785600662231445,-156.9510040283203],["Molokai Airport","Molokai",3,0.0,21.15290069580078,-157.0959930419922],["Klawock Airport","Klawock",1,0.0,55.579200744599994,-133.076004028],["Elfin Cove Seaplane Base","Elfin Cove",1,0.0,58.195201873799995,-136.347000122],["Gustavus Airport","Gustavus",2,0.0,58.4253006,-135.7070007],["Hoonah Airport","Hoonah",2,0.0,58.0961,-135.410111],["Haines Airport","Haines",2,0.0,59.24380111694336,-135.5240020751953],["Skagway Airport","Skagway",2,0.0,59.46009826660156,-135.3159942626953],["Angoon Seaplane Base","Angoon",1,0.0,57.503601,-134.585007],["Hydaburg Seaplane Base","Hydaburg",1,0.0,55.206298828125,-132.8280029296875],["Athens Ben Epps Airport","Athens",1,0.0,33.94860076904297,-83.32630157470703],["McKellar-Sipes Regional Airport","Jackson",2,9.133172398478521e-7,35.599899,-88.915604],["Imperial County Airport","Imperial",2,7.730364873222015e-7,32.834201812699995,-115.57900238],["South Arkansas Regional At Goodwin Field","El Dorado",3,0.000010765105848593787,33.22100067138672,-92.81330108642578],["Memorial Field","Hot Springs",2,0.0,34.47800064086914,-93.09619903564452],["Boone County Airport","Harrison",2,0.0,36.26150131225586,-93.15470123291016],["Salina Municipal Airport","Salina",1,0.0,38.79100036621094,-97.6521987915039],["Southwest Oregon Regional Airport","North Bend",2,0.0,43.41709899902344,-124.24600219726562],["Eastern Oregon Regional At Pendleton Airport","Pendleton",1,0.0,45.695098877,-118.841003418],["Iliamna Airport","Iliamna",1,0.0,59.75439835,-154.9109955],["Cavern City Air Terminal","Carlsbad",1,0.0,32.337501525878906,-104.26300048828124],["Los Alamos Airport","Los Alamos",1,0.0,35.8797988892,-106.268997192],["Lancaster Airport","Lancaster",1,0.0,40.121700286865234,-76.29609680175781],["Victoria Regional Airport","Victoria",1,0.0,28.85260009765625,-96.9185028076172],["Kapalua Airport","Lahania-kapalua",2,0.0,20.962900161743164,-156.67300415039062],["Hana Airport","Hana",1,0.0,20.79560089111328,-156.01400756835938],["Waimea Kohala Airport","Kamuela",1,0.0,20.001300811767575,-155.66799926757812],["Atlantic City International Airport","Atlantic City",9,4.61521893811316e-6,39.45759963989258,-74.57720184326172],["Arnold Palmer Regional Airport","Latrobe",3,3.7292212453734347e-7,40.27590179,-79.40480042],["Cincinnati Municipal Airport Lunken Field","Cincinnati",3,0.00006431101893667193,39.10329819,-84.41860199],["Morristown Municipal Airport","Morristown",2,8.674363876886312e-6,40.79940032958984,-74.41490173339844],["Manistee Co Blacker Airport","Manistee",1,0.0,44.2723999,-86.24690247],["Teterboro Airport","Teterboro",1,0.0,40.85010147089999,-74.060798645],["California Redwood Coast-Humboldt County Airport","Arcata CA",3,4.638218923933209e-6,40.978101,-124.109],["Jack Mc Namara Field Airport","Crescent City",2,0.0,41.78020096,-124.2369995],["Altoona Blair County Airport","Altoona",2,0.0,40.29639816,-78.31999969],["John Murtha Johnstown Cambria County Airport","Johnstown",2,0.0,40.31610107421875,-78.83390045166016],["Aspen-Pitkin Co\u002fSardy Field","Aspen",2,0.0,39.22320175,-106.8690033],["Bradford Regional Airport","Bradford",2,0.0,41.8031005859375,-78.64009857177734],["Chautauqua County-Jamestown Airport","Jamestown",2,0.0,42.15340042,-79.25800323],["Raleigh County Memorial Airport","Beckley",2,0.0,37.787300109899995,-81.1241989136],["Shenandoah Valley Regional Airport","Weyers Cave",2,0.0,38.2638015747,-78.8964004517],["Chico Municipal Airport","Chico",1,0.0,39.79539871,-121.8580017],["Morgantown Municipal Walter L. Bill Hart Field","Morgantown",2,0.0,39.64289856,-79.91629791],["Mc Clellan-Palomar Airport","Carlsbad",1,0.0,33.12829971,-117.2799988],["DuBois Regional Airport","Du Bois",2,0.0,41.17829895,-78.8986969],["Venango Regional Airport","Franklin",2,0.0,41.3778991699,-79.8603973389],["Mid Ohio Valley Regional Airport","PARKERSBURG",1,0.0,39.34510040283203,-81.43920135498047],["Houghton County Memorial Airport","Hancock",1,0.0,47.168399810791016,-88.48909759521484],["Eagle County Regional Airport","Vail",1,0.0,39.64260101,-106.9179993],["Gunnison Crested Butte Regional Airport","Gunnison",1,0.0,38.53390121,-106.9329987],["Yampa Valley Airport","Hayden",1,0.0,40.48120117,-107.2180023],["Laramie Regional Airport","Laramie",1,0.0,41.31209945678711,-105.6750030517578],["Montrose Regional Airport","Montrose CO",1,0.0,38.5097999573,-107.893997192],["Pueblo Memorial Airport","Pueblo",1,0.0,38.289100646972656,-104.49700164794922],["Chippewa Valley Regional Airport","Eau Claire",1,0.0,44.86579895019531,-91.48429870605467],["Topeka Regional Airport - Forbes Field","Topeka",1,0.0,38.950901031499995,-95.6635971069],["Lea County Regional Airport","Hobbs",1,0.0,32.6875,-103.2170029],["Crater Lake-Klamath Regional Airport","Klamath Falls",2,0.0,42.156101,-121.733002],["Muskegon County Airport","Muskegon",1,0.0,43.16949844,-86.23819733],["Modesto City Co-Harry Sham Field","Modesto",1,0.0,37.62580109,-120.9540024],["Barkley Regional Airport","PADUCAH",1,0.0,37.06079864501953,-88.7738037109375],["Redding Municipal Airport","Redding",1,0.0,40.50899887,-122.2929993],["Naples Municipal Airport","Naples",1,0.0,26.1525993347,-81.7752990723],["Grand Canyon National Park Airport","Grand Canyon",1,0.0,35.95240020751953,-112.14700317382812],["Western Neb. Rgnl\u002fWilliam B. Heilig Airport","Scottsbluff",1,0.0,41.87400055,-103.5960007],["Cortez Municipal Airport","Cortez",1,0.0,37.3030014038,-108.627998352],["North Platte Regional Airport Lee Bird Field","North Platte",1,0.0,41.12620163,-100.6839981],["Mc Cook Ben Nelson Regional Airport","McCook",1,0.0,40.20629883,-100.5920029],["Riverton Regional Airport","Riverton WY",1,0.0,43.064201355,-108.459999084],["Sheridan County Airport","Sheridan",1,0.0,44.76919937133789,-106.9800033569336],["Merced Regional Macready Field","Merced",1,0.0,37.28469849,-120.5139999],["Ernest A. Love Field","Prescott",1,0.0,34.65449905,-112.4199982],["Visalia Municipal Airport","Visalia",1,0.0,36.3186988831,-119.392997742]],"geo":"geo","hovertemplate":"\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003eRoutes=%{customdata[2]:.0f}\u003cbr\u003ename=%{customdata[0]}\u003cbr\u003ecity=%{customdata[1]}\u003cbr\u003eBetweenness=%{marker.color:.4f}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["ADQ","KLN","KYK","BRL","ORD","STL","DEC","JBR","KTN","MTM","ATL","LWB","MCN","MEI","MSL","PIB","TUP","EYW","FLL","RSW","TPA","MCO","GLH","GNV","JAX","PNS","TLH","PBI","LAS","LAX","MCG","NIB","TLJ","AKP","FAI","BTT","CEM","IRC","CIK","FYU","MLY","WBQ","BET","EEK","KPN","KWN","KWT","MLL","NME","WNA","CYF","KKH","KWK","OOK","PKA","PTU","ABL","OTZ","SHG","ANC","AIN","ATK","BRW","ANI","CDV","ENA","HOM","KSM","UNK","VDZ","CHU","HCR","KLG","RSH","SHX","ANV","AUK","EMK","HPB","KUK","VAK","BKC","DRG","NUI","PIZ","BTI","SCC","ELI","KKA","OME","KOT","GAL","RBY","HSL","KAL","NUL","GAM","SVA","GLV","WMO","SCM","KYU","IAN","ORV","SKK","MOU","KTS","TLA","WAA","KVL","TOG","MYU","OBU","SHH","WLK","WTK","SLQ","SMK","AKK","LUR","TNC","AET","HUS","ARC","VEE","LMA","AZO","CHA","CID","CRW","CVG","EVV","FWA","GSO","GSP","LAN","LEX","MBS","MSP","ROA","SYR","TYS","XNA","DTW","MSY","GFK","TVF","JFK","LGA","MDT","MEM","ACK","BOS","EWB","HYA","MVY","ALB","MSS","OGS","AUG","BHB","BIL","GDV","GGW","HVR","OLF","SDY","LEB","PVC","RKD","RUT","SLK","CGI","HPN","IRK","MWA","OWB","TBN","UIN","ABE","CLT","PHL","ABI","DFW","ABQ","PHX","ACT","AEX","AGS","DCA","ALO","AMA","ART","MIA","AUS","AVL","AVP","BDL","PIT","BFL","BGM","BGR","BHM","BMI","BNA","BOI","BUF","PDX","RIC","ROC","SAN","SEA","BPT","BRO","BTR","BTV","BUR","BWI","CAE","CAK","CHO","CHS","CLE","CLL","CMH","DAB","DAY","DEN","DSM","EWN","EWR","FAY","FLO","GPT","HHH","HSV","HTS","IAD","IAH","ILM","IND","JAN","LIT","LYH","MCI","MGM","MHT","MKE","MLB","MOB","MYR","OAJ","OMA","ORF","PGV","PHF","PVD","PWM","RDU","SAT","SAV","SBY","SDF","SFO","SLC","SMF","SRQ","TRI","VPS","CMI","COS","COU","CRP","CWA","DBQ","ISP","DRO","ELP","FAR","FAT","FSD","FSM","GCK","GGG","GJT","GRI","GRK","GRR","HNL","HOU","ICT","JLN","LAW","LBB","LCH","LFT","LRD","MAF","MFE","MHK","MLI","MLU","MSN","OGG","OKC","ONT","PIA","PSP","RAP","RNO","ROW","SAF","SGF","SHV","SJC","SJT","SNA","SPI","SPS","TUL","TUS","TXK","TYR","ELM","ERI","EUG","FLG","FNT","GEG","GRB","OAK","HVN","IPT","ITH","JNU","KOA","LIH","MFR","MMH","MRY","RDM","STS","LGB","LSE","MQT","RST","SUX","TOL","TVC","SCE","SWF","SBA","SBP","YUM","ABY","ATW","BQK","CSG","DAL","DHN","ECP","GTR","MDW","SBN","VLD","ADK","AKN","ALW","CDB","DLG","SDP","SNP","STG","BLI","LWS","PBG","PQI","BZN","YAK","EAT","FCA","GTF","HLN","PSG","SIT","WRG","PUW","MSO","PSC","YKM","ORH","ABR","APN","BIS","BJI","BRD","INL","BTM","CDC","CIU","CNY","COD","CPR","DIK","DLH","ESC","PLN","EKO","GCC","RKS","HIB","IDA","IMT","RHI","ISN","JAC","LNK","MOT","PIH","SGU","TWF","VEL","AIA","CDR","ALS","FMN","TTN","ATY","PIR","BKG","CYS","WRL","DDC","LBL","ILG","SOW","HON","PGA","UST","HRL","PGD","PIE","SFB","AZA","OGD","PVU","RFD","STC","BLV","CKB","HGR","IAG","SCK","SMX","LCK","YNG","PSM","PIP","WSN","KFP","KVC","NLG","EGX","IGG","KPV","PTH","ITO","LNY","MKK","KLW","ELV","GST","HNH","HNS","SGY","AGN","HYG","AHN","MKL","IPL","ELD","HOT","HRO","SLN","OTH","PDT","ILI","CNM","LAM","LNS","VCT","JHM","HNM","MUE","ACY","LBE","LUK","MMU","MBL","TEB","ACV","CEC","AOO","JST","ASE","BFD","JHW","BKW","SHD","CIC","MGW","CLD","DUJ","FKL","PKB","CMX","EGE","GUC","HDN","LAR","MTJ","PUB","EAU","FOE","HOB","LMT","MKG","MOD","PAH","RDD","APF","GCN","BFF","CEZ","LBF","MCK","RIW","SHR","MCE","PRC","VIS"],"lat":{"dtype":"f8","bdata":"AAAAAADgTEB06f8ffsRMQLb+\u002f7+WyExAAAAA4D9kREDM7snDQv1EQIHOpE3VX0NAAAAAINTqQ0AAAAAgdepBQBChAECErUtAJF8JpMSQS0B9rrZif9FAQOQPAMDc7UJAAAAAoK1YQEAAAACgkipAQOqf+f9lX0FAAAAA4JN3P0AAAAAgUSJBQP\u002f\u002f\u002f59cjjhA6bga2ZUSOkAAAABgRIk6QAAAAGC6+TtAAAAAIO1tPEAAAACgz71AQNEOAGCqsD1AAAAAYH1+PkA5AADAMHk+QAAAAACBZT5AAAAAQOauOkDNKfm\u002fQApCQCkMBOCj+EBA+Nr5n\u002fh5T0BR2ht8YYJPQN4DAMB7ck9AnYkC4IwIUUBDNPyfKjRQQMAV\u002fV99ulBAsHT8H7lkUEAuWRXhJnVQQDwJAKBHqVBAAAAAgJOkUEDF+f+f2D9QQHEGAEAul1BATqcKgNBjTkDMbASgWRtOQGXx\u002f39s901A1JrmHafgTUBE+P9\u002fKGVOQIkQAGCh7k5AKAAAwEk8TkAAAADAW1hOQMUZAAAZE05A2wAAgPv6TUAF\u002fYUeMfBNQME8AaBMRU5A+Nr5n\u002fhZTkAAAACAdYFNQCbkg57NxlBAhYT\u002f3564UED1\u002f\u002f+f1rhQQP\u002f\u002f\u002f79Slk5AJwUAANWoUUAAAABA6J1RQKINwAZE0lFAAAAA4HHKTkDRHP4\u002f8z5OQAAAAGBbSU5AAAAAAKPSTUCf7wKAvgdPQJbK\u002fB+38U9ATb8CoCORTkArhqsDIMpOQAAAAEAaGE9AAAAAgKXETkCUAgCAsuNOQOgVAECdWE9A\u002fyCSIcdST0Df5v+fC1dPQIWE\u002f9+eZE9Ak4ADIA\u002fDTkCBkfpf7G9OQAU0ETY8xU5AlAIAgNJ+UECj\u002ff9fdIRQQIQHAKBwjVFAXWAD4OduUUAd8\u002f9\u002fk4hRQH+tAQB2jFFAaM8CQFcnUEAFCQDAIDxQQAAAAODHIFBAVBMAwOqDT0DcDQXgHS9QQDnsAICKLlBAZ+f6X6psUEBsAQQgbBRQQCv8Gd6sLlBAAAAAgCbiT0AAAAAA3NdPQFv\u002f\u002f187I1BAXgUA4BssUECWBQDAMuxOQJD8\u002f\u002f8ROFBAtv7\u002fv3a+UEDukv5\u002fWLRQQG6mACDAF1BAAAAAIDYMT0Ah+f\u002f\u002fM1VQQJUFAMBiT1BA\u002fG1PkNhnUEAAAADgHe9QQAEAACDChk1AAAAAAIovTkAYCgAgY7pQQNo8DoP5j1BAywYEAGimUEAAAAAAO+RQQE8KAACq2U5Agrj+n7u+T0C96v9fJ3hMQNC2\u002fZ8BOFFAE6z93wlkUEAFCQDAUKNQQFfIAWChglBAejarPlcHUUBzCQCAjsBQQGUYd4No8U9AAAAAQBEeRUAAAADAhIRBQP\u002f\u002f\u002f9898URAAAAAwMEvQ0B69f8fP4ZDQGILAGC8BENADyMIgD99REAAAADAhAxCQDAUAECmckFAAAAAgKxjRUAAAAAArARDQAAAACA2xEVAN4lBYOVwRkCLbOf7qalCQAAAAMA7jkVA73b3387nQUBmZ9E7FSRCQAAAAOAvG0VAAAAAgE\u002f+PUARkC+hgvlHQAbX\u002fd9oCEhACOYJAOVRREA4xfw\u002fe2NEQKUAAKDEGERAAAAAYG2FQUBnaQKgZaBEQJAL91+hLkVAAAAAgIrWREC0ZwGgq9VEQAvy\u002fx9RskRAAAAAQMhfRUAAAABAyHdGQEX4\u002f39IV0ZAygIAYAkpRkAFsPmfmTlGQP\u002f\u002f\u002f79i50ZAA40E4MCRR0DUKvpDMxtIQHEzBQCBRUhAQxUAoBgMSEAOvcXDe9pHQCD5\u002f\u002f8j0EVAnhQAADQJRUDt1QlgsQdGQA0U\u002fF\u002fDw0VAAAAAgFExRkAAAACg1pxCQAAAAICTiERAAAAAwPcLREApDATgo+BCQIK4\u002fp+73kJAk0EHwOzeQkBn5\u002fpfqvhDQAAAAAB4U0RAAAAAYGSbQUAAAABgmu9DQCsLAIClNEBAkwILYMpyQEB8Kqc9JYVBQAAAACCXt0BAAAAAIH6cP0AAAACA0FM\u002fQAAAAOBYr0BA93XgnBFtQ0AAAAAAT0dFQGZn0TsVnEFAAAAAoPb+RUAAAAAgD8s5QAEAAMDKMT5AAAAAYNW3QUCdFAAAVKtEQO8BAOAt+ERAZVr2f+k+REDcTAFAgLdBQN4w+p+2GkVAAAAA4FhnRkCyGfkfDchAQJ4H+58RPURAAAAAoO8PQkBj7lpCPshFQJKY+z9ieEVABz3+f1rLRkAAAABgqsBCQAAAACA4j0VAshgAoOZdQECHb2HdeLlHQAAAAKBn8z1AAAAAACToOUCJQsu6f4g+QD3p\u002fz9nPEZAAAAAgLAZQUD129eBc5ZDQAAAAKAq+EBA\u002f\u002f\u002f\u002fv0J1REAAAACgvRFDQCe++18Fc0BAFQQAoLK0REDQngWArpY+QAowLH++\u002f0NARpVh3A0uPUAAAADggfNDQCEAACBM7kNA\u002f\u002f\u002f\u002fH1rEREA\u002fDwAgWIlBQAAAAOCjWERAAAAAoN9+QUAAAAAguxdBQAAAAOBEaD5ARhsAILkcQEC+\u002f\u002f+\u002fj1FBQDKvAgDwLkNAixwBYOV4Q0AAAACgAfw9QAAAAACjIkFA3bWEfNDbQ0At7v9f1SdAQOUSAABdXUFAAAAAQNGpQkASpb3BF6ZDQOtE9v95JkBAUigLX193RUD\u002f\u002f\u002f\u002ffPXlFQAAAACBRGjxAYQAAgPKwPkCCBABgANdAQBzw\u002fz8jakFA1xLyQc+mREAAAABAgnJCQJHz\u002fj9O0UFA7K4FIOKQQkAqApzexd1EQN4w+p+20kVAAAAAQFXwQUAAAACgoIg9QIdo+D9VEEBAAAAAgJUrQ0ARNjy9UhZDQAAAAGA7z0JAAAAAQOpkREAAAADgAllDQAAAAOA4ZTtAZAPpYtM8QkBdbcX+sns+QOztAYAEBURAxAq3fCRnQ0AAAACAt2hDQAAAAOA4xTtAxPb\u002fX4hjRkD66QXAdDNFQEaCBCDJZURAo\u002f3\u002fX2STQkC+8gegpM4\u002fQAAAAIDZdUdAAAAAgFpjQkD58\u002f\u002f\u002ffspFQAAAAMAVq0FAQRIAYLj2QkAAAADgJjFAQFQTAMCqj0NAAAAAANd7RECk3f\u002f\u002fMxE\u002fQOZVAAC+cEVAi3H+JhRSNUANa\u002fDfOKU9QP9Z8+Mv00JAAAAAIG6TQkDRDgBgqkhBQORLqODw1EBAAAAAIEggPkA0\u002fQqAjjQ+QP\u002f\u002f\u002f382iztAAAAAoEfxP0C+BvE\u002fAS06QAAAAEAMkkNAAAAAgGi5REAAAAAgZUFAQAAAAEDokUVAgy9MpgrmNEAAAAAgUbJBQAAAAAArB0FAJf\u002f\u002ffwRVREAAAACgM+pAQAAAAGDMBUZAAAAAgOK\u002fQ0AAAADgmqZAQGcUACD9zkFAKjMIIHOfQkACKhxBKjlAQCnMe5xprkJAAAAAQJJbP0DAFf1ffdZAQOJi+38L7ENAdCSX\u002f5D+QEAAAAAgZRlCQAAAAGDcDkBAAAAA4BK6QEAAAAAgUy1AQAAAAKB3FEVAzPvt56MKRUAAAADg8g9GQDU4+F+6kUFAAAAAQJJ7RUAAAADgWM9HQAAAAMAXPkZAyVUsflPcQkADjQTgwKFEQAAAAEDznkRAAAAAINk+RUAAAACgcC1NQD3X9+EgvTNAAAAAINv5NUAAAADA5S9FQG7l\u002fH\u002fiz0JAAAAA4CJLQkCY8QBghiBGQOws\u002ft8mQUNAZ+f6X6roQEAujzUjg\u002fBFQBjq\u002f79CLUdAAAAAIEP0RUDq3vVfiDNFQEWa\u002fD8cy0RAAAAAQOZeRkAw9P\u002fftWxEQAAAAGCGwERAoBYHwI02QUB5FQCAT55BQOJi+38LVEBA\u002f\u002f\u002f\u002ffxaJP0DKAgBgCSFGQAAAAMBAQj9AAAAAIBZCQEC2vHK9bWxAQAAAAMBAUj9AlDR\u002fTGtbPkCc8f9fo7lAQCfYf52b5ERAAAAAoLbaREAAAADgUcg+QAAAAEBi8ElAkAv3X6FWTUCfrPefJQxHQAAAAIBhmktAZoH6v7iFTUAAAADgUahLQP\u002f\u002f\u002fx9qlUxALA4AwAVKTEAAAACAemVIQAAAAKDvL0dAAAAAwFBTRkARiQggMVhHQEtx+h+F40ZA4+z\u002fH2zATUD3EAAgD7NHQAAAAIC+J0hA8kL4H7K9R0AAAACgq01HQPGd+x+eZkxAAAAAYAeGTED1eAiA\u002fT1MQEi\u002ffR04X0dAIs8FYEl1R0AAAADA4SFHQEfoBMC6SEdAAAAA4DYiRUAAAAAgfLlGQMUvBiD\u002fiUZAAAAA4OdiR0CeRvf\u002fM8FHQBQS\u002fn\u002f7MkdAAAAAQHlISEAAAADgNvpGQAAAAGC62UJAAAAAQBogR0ApDATgo2BDQDD0\u002f9+VQkZAHt5zYDl0RUCL8\u002f8\u002fEWZHQM4IAODJa0dAiRAAYIHcRkBtvvg\u002fE8lGQAAAAGCWaURAR\u002fv\u002fv6gsRkBApN++DsxEQHOV9h98sUdA88ZJYd7BRUCJEABgwehGQAAAACDL0EZAqgkAYMUWSEAAAAAAvM1FQAAAAKDtbERAAAAAADQhSEAAAABgdHRFQJJ3DmWohEJAPZtVn6s9RUDTKwpgbzhEQHgSAEDPBkVAtPv\u002ffzZrRUBDjNe8qrdCQH77\u002f5\u002ffXkJAAAAA4GojREAfmfX\u002f\u002fXRGQE\u002fi91\u002f8MEZAKGVSQxtEQkBRSPj\u002f7ZNEQAAAAACc+0VAAAAAILfhQkAV+gVgqIVCQFKu+J\u002ff1kNAXgUA4PshQUAAAABATjFGQHIv9n+KdkJAvVKWIY71PUAAAAAAfzo6QIsECUCS6zpAHDcE4ALpO0AAAADAEMc8QOqf+f9lp0BADQAAQBOZREDQ\u002f\u002f+\u002fDhxEQAAAAOACGUVAAAAAAPfFRkC94xQdyUVDQLgBAAD3pUNAIef9f5zaQ0AAAAAAvI1FQA8AACB18kJAk4ADIA9zQUDeOZShKuhDQHD0CKBeoURAQxUAoPiJRUBSEACASspMQEj+\u002f\u002f8IWk1AAAAAoHdsS0AAAADg4o5LQOH\u002f\u002f7\u002f1AExA9u3\u002ff74XTUAAAADgeKlNQOYeEr7380tAAAAAwMN6TEAAAACgrbgzQAAAACAdyTRAAAAAgCQnNUAb8P8\u002fI8pLQGELAGD8GE1ADvwDQHA2TUCjkjoBTQxNQAAAAOA0n01AAAAAgOS6TUDQnWD\u002fdcBMQAAAAABomktAAAAAwGv5QECZ84x9ycxBQLvn\u002fx\u002fHakBAAAAAwEmcQEAAAAAgLz1BQAAAAOB4IUJAAAAAgD9lQ0AAAACAY7VFQMUZAAD52EZABLQIIJDgTUAAAABAMytAQOgVAECd8EFAAAAA4JMPREAAAAAARNo8QAAAAKCA9jRAAAAAgKzLNED\u002f\u002f\u002f8\u002fVQA0QAAAAKCSukNAm3r2v1AjRECb5AXgOI1DQP\u002f\u002f\u002f79SZkRAg\u002ff6\u002f90iRkAD5v8f0GxEQKuX32kyfURAAMEDoN3jREC15flf8CVEQAAAAAB2KERAelT835GcQ0AAAAAAzOZEQNyL\u002fZ+iE0VALxQAQMbkQkAi\u002fP8\u002fxCFDQIRd+5\u002fP5UNAOewAgErSQ0ClRPkfbJBAQKCU\u002f3\u002fSlkRA+fP\u002f\u002f16wREAAAABALKxDQAAAACCOlUdAzSn5v0DSQ0BXH\u002fbfVkRDQDX5+\u002f+XPURAAAAA4PKnRECHDQAgQUFDQAAAAEABJUNAAAAAgNJuRkA4AwAgt3lDQAAAAAAAWEBAu+8YHvsTRUDyQvgfspVFQPOsB0Aa0EJAAAAAQMiHQkDsLP7fJkFEQIjt\u002f78QJzpAAAAAQOj5QUDPdwFA3+9EQEf7\u002f7\u002fIpkJApMYAYCeQREDLBgQAaBpEQL0KAMA3iEVAAAAAIHViRkCi4gcAcaRCQKyB95\u002fGU0FA1hcAIMsoQkA="},"legendgroup":"","lon":{"dtype":"f8","bdata":"tzMC4M4PY8Bh6P+\u002fSz9jwLfe\u002f19mTmPAAAAAQAjIVsDuWkI+6PlVwAAbECGul1bAAAAAoGc3VsAAAACgXqlWwEwW9x\u002fZdmDArb8lAH9yYMCimLwBZhtVwAz1\u002f1+RGVTAAAAAgIzpVMAAAAAgHzBWwPwM+38N51XAAAAAAJNVVsAAAAAARjFWwAAAAECdcFTAKgKc3sUJVMAAAABAVXBUwAAAAAAgolTAAAAAoMZTVMD\u002f\u002f\u002f8fFL9WwKgGACBlkVTAAAAAgAZsVMDq\u002f\u002f8\u002f8ctVwAAAAGBrFlXAAAAAQB4GVMCnvuJfuslcwDlX3p8cml3AGun7X2RzY8DiPJzAdEtjwBsQAKBDf2PArIH3n8b3YsAa6ftfZHtiwF2LFqDt8GLAjRMVYA4ZYsCAR1SobgJiwHTp\u002fx+u92HAAAAAAAAoYsBjy\u002f+fm9RiwCwuACAGbWLAQmTs39A6ZMDaKQyAZ0FkwHbM\u002f\u002f\u002f9gGTA16NwPQo7ZMCs7P8\u002fNS5kwCE8AADVQGTA9f\u002f\u002fn26WZMAAAAAAVD9kwD3J\u002f98miWTAC\u002fL\u002fHzFcZMCJeyx9aGVkwDTS97\u002fIomTAUtkLYOU4ZMAAAACAPTpkwAQBMnRsu2PAxmrz\u002fypTZMB5AAAgL6VjwAAAAEDfv2LAO+b\u002f\u002f9b\u002fY8AAAADA861jwC6PNSODmGPAAAAAQGDxY8D38vG\u002fSy9iwAAAAADX52LAAAAAoEPvYsBzKhkAqmlkwFA0D2CRGWTA6LsAoO9HYsDQmh9\u002f6eZjwAAAAMDM+GPAAAAAgOkKZMDFGQAAOSpkwKzs\u002fz818mPAbvdynxwGZMB06f8fHpVkwJQ9+D+2j2TACQ0OQLTEZMAhUQ2gxFBkwPCnxks3s2TAKOX\u002fn8QkZMCVJQAgg1hkwAvy\u002fx8x4GLAOzoJAClgZMAFxv+\u002fn\u002fJhwFqo6z\u002fhjmLACQ0OQLRIZMDt\u002fv+f7SRkwAAAAIA9rmTAbyMAYA5xZMDtfhXg+51jwJbi9D8Kb2PA367yXzuLY8CUPfg\u002fttdjwLLXuz9ewmPAAAAAwHR3ZcAAAACgxk9lwE7n\u002f185YGTANiAAQDdtZMClQwCgRbJkwBsQAKBDt2PAXgUA4PsNZMDmFgSgmyBkwMZq8\u002f8qJ2TAAAAAANN1ZMBMBACA6c5kwMM2ACDZymTA16NwPQoDZcAAAAAgBJJkwAAAAEC0DGTAAAAAAKzIZMCfFwBAtJxjwMy1aAHawmTAWAPvP43\u002fY8AAAABAM19kwALj\u002f99PpWPAS3H6H4VDZMDd4P8f20VjwEtx+h+Fw2TAOPAPAIH9ZMA0PQBg5xNjwJ1KBoBqSGPAhbGFIIcyYsC5wf8\u002ftktiwHMqGQCqCWPAAAAAoFVjVcAAAAAAC01VwAAAAMB97VbAAAAAAPdlVMBr+v8\u002fvSpVwBYHAOAS4lXAhUUDgHxMVcAAAADA\u002fPtTwJQCAIACjlTAAAAAAJglVcAAAAAgxyZVwAAAACAYBVXA\u002fgsEATJOV8DmWrQAbf5TwAAAAKDNBlPAbmcEwJ3\u002fVMBTWKmgopNXwAAAACCe1lTAAAAAIIOQVsCnsFJBRUtYwIyCAQDXC1jAXsYDgNlxUsBcOf+f2HdSwNwAAIDbMFPAAAAAQIJ+VsCZlv1f2oNRwE4lA0BVwFHAAAAA4D29UcC6\u002fwIg8pFRwAUJAMBQp1HAAAAAAE9zUsAAAABAHrZSwNj3\u002f7\u002fK3VLAuAEAAAdzUcC52P7fIhdRwAAAAIDAIlvAfPn436UzWsC\u002fRpIgXKdawDyh15\u002fEcFvAbr3\u002fv8xkWsAZxt0gWgxawL8NAAB4E1LAW\u002f\u002f\u002fXyuOUcCCeQJAWUZRwClLAEDGPFLAAAAAYDKNUsAAAAAAiGRWwAAAAGBJbVLAAAAAoN8iV8ARBwHgtUBWwDkr\u002fd+sylXAhcP7PwEJV8Cw9gNgdMxWwAAAACA23FLAAAAAwFs8VMAAAAAgbs9SwCL8\u002fz+k61jAsMvwn25CWMDOjlTf+aZawAAAAKDEAFzAAAAAgMBOWMABAADgLyNXwAAAAGC6fVTAEYqtoGlCU8AAAACAnhlXwF980R4vbVnAAAAAgGMBU8AAAABAmRJUwAAAAKDfaljAAAAA4KyiVMBhCAAgTO5SwEsEAIC5K1LAXWAD4OcOVMB8+fjfpcNdwA96\u002fP+0\u002flLAAAAAoP80UcCMwf1fObBVwPGd+x+eOlbAAAAAoGerVcCDwMqhRQ5dwLNA\u002fV\u002fcrlPAWUEdoEWmXsAAAAAAdlRTwAAAAKAIa1PAVZD\u002f\u002fyhMXcDiIYyfxpNewAAAACBTgVfAAAAAAEJbWMAapUv\u002fkslWwH37\u002f5\u002fPSVLA\u002f\u002f\u002f\u002f3\u002fmWXcD0wMdgxSpTwAAAAOClR1TAAAAAAE1cVMAAAABg\u002fJxTwEQcBICXAlTAGAoAIGN2VMAfQgGASBdYwHIVi98UuVTAon2s4LdDVMAAAACgCg5VwBMBAGASK1rAAAAAQHBqV8B48v\u002ffvkJTwAAAAADMilLAAAAA4Fa4U8AAAABgVO5TwAAAAIB8RFbAoPf\u002f36MsVMANAABAm7FVwFv6AkC2o1TAkLQC4CtdU8AAAACA2dVXwAAAAEDEeVPACTauf9eSVcDcAACA24RWwFj5\u002f99aDlfAAAAAYNPMU8CCqzyBsK1XwARx\u002fT83mVXAmPkOfuLbUcAAAADgYflVwAAAAKBMKVTA3f\u002f\u002f\u002f4kPVsBKAQBAabtTwOfy\u002f58sZ1PAAd9t3jj5V8AAAACA4AxTwJgw\u002fb+oWFPA53wEQI0fU8D6CPzh59pRwFAJ\u002fJ\u002fLk1HAAAAAYGayU8ABAABAEZ5YwJ3I\u002fj\u002fvTFTAAAAAwKjgUsDJdr6fGm9VwAAAAAAAmF7AAAAAgJf+W8ABAAAA02VewAAAAEB7o1TA5Nak2xKaVMCQ2O4eoKFVwOXv\u002f1\u002fMEVbAHqhTHt0sWsD\u002f\u002f\u002f\u002ffDQ5XwAAAAKATYFjA6PX\u002f36xqVsC84\u002ft\u002faK1WwJq9AaBpRlLABEkAgEHwWsAufDMgMZhawAEAACA2NFjAAAAAwPPtXcDa\u002ff8\u002fey9YwAAAAICDl1fAvof\u002f\u002f1UuWcABAABAia1XwFu8\u002f1+6IVvAAAAAgNCTWMBn9P+\u002fDHVYwMcT\u002f391YVXAhUGZRpO9Y8BexgOA2dFXwKJ9rOC3W1jA\u002f\u002f\u002f\u002fH+SfV8DMBQCgqZpYwBmrzf+rdFnAAAAAgEpOV8Cg0\u002fvfNP9WwAAAAOCK3VjAAAAAoO2MWcC5F\u002fs\u002fRY9YwAAAAGDuKljAAAAA4HqgVsAAAACgaQJXwAAAAKCZVVbASRCugMKNY8D\u002f\u002f\u002f\u002ffcWZYwP\u002f\u002f\u002f792Zl3A+fP\u002f\u002f15sVsD\u002f\u002f\u002f+\u002fciBdwP\u002f\u002f\u002f9+lw1nAAAAA4CbxXcABAADg+yFawBfH\u002fx+yhVrAhYT\u002f395YV8D35GGh1nRXwOI8nMB0e17AAAAAgL4fWcBYA+8\u002fjXddwEsy\u002fr9ia1bA8b2\u002fQXufWMAAAACg1vhXwAAAAGA5vFvAAAAAgGx\u002fV8AAAADgwNlXwAAAAAAQOVPATf3\u002foSALVMAAAABgkc1ewHPs6p\u002fx6lvAAAAAIJfvVMD\u002f\u002f\u002f\u002f\u002fLGJdwAAAAGBLCFbAiNhg4SSOXsDzafxfwThSwAAAAEDzOlPAAAAAYFYdU8AAAACgbtJgwC8zbJR1gWPAAAAAINnqY8D\u002f\u002f\u002f8\u002f37dewITI2L+htV3AAAAAwPN1XsB2NuSfmUlewCUC1T8ItF7Ap77iX7qJXcCeeqTBbdBWwHEGAEBO2VXAAAAAAAAgV8BPo\u002fv\u002fmRhYwPXP\u002fP+y81TAAAAAwEJlVcCIDQAgUXZTwAAAAAC1hlLAtFDXf8L1XcC0+\u002f9\u002fFilewDTS97\u002fIplzAAAAAwHIMVcDH\u002fP\u002ffOCFWwAAAACDbXVTAAAAAABc8VcD+8PPfgzZYwAAAAEDGXFXA9DEfEOhyVcBMBACA2SVWwGOa6V4n8FXAAAAAoE6UVcAAAACAtdFUwAAAAACsFGbAIVENoMSUY8Cwy\u002fCfbpJdwAAAAEAzV2TAOzoJACnQY8AAAABgvBBkwAAAAEAKR2XAgL7\u002fHy81ZcAAAACgbqJewAAAAMD1QF3AAAAAYPVdUsCD9\u002fr\u002f3QJRwKSyF8DKyVvA+PD\u002fvx51YcAJjP9\u002fPw1ewAAAAEBikFzAn+8CgL7XW8AAAACA6f5bwGb\u002f8n89nmDAAAAAgJXrYMDFxfb\u002f1otgwL9hokEKR13AyrTs\u002f9KFXMAAAADAncddwEJk7N\u002fQIl7AAAAAgAv4UcD\u002f\u002f\u002f+\u002f\u002fppYwGlN+\u002f\u002fb41TAAAAAgL4vWcA+Xf6\u002fwbtXwEKP\u002f5\u002fWiFfAAAAAYMxZV8AAAADgzh9cwAAAAABWRlzAAAAAwDseVcBfBDLgUXBbwFDK\u002fz+JQVvATBx5ILKdWsCk3f\u002f\u002fU7NZwCH5\u002f\u002f9jDFfAevX\u002fH\u002f\u002fFVcDkyPsf\u002fTJVwP\u002f\u002f\u002fx+w8lzA8yoAAH9iWsBETfT5KERbwLr\u002fAiCyNVfAHsNjP4sEXMAh+f\u002f\u002fUwdWwAAAAIDrXVbAtPv\u002ffxbpWcAAAABgO69bwP\u002f\u002f\u002f7+WMFjAAAAAgOtRWcAAAADgJCZcwPc8f9qoYFzAxF4oYDufXMALGdnfo2BbwLV4\u002f790s1nAm1EAgBTGWcC6LvzgfHdawEESAGC4DlvAAAAAYBC0UsAQ4Pyf5klYwH9D8t9NElnALVqAttVMV8Db\u002fSrA9zNawAAAACDd\u002fFrAAAAAYMz9WMAgrBCgcD1ZwNHdAeDQ5lLAFeT\u002fP2KAW8AAAADAn45YwBmrzf+r3FvAwk8cQL9VVMAAAADA4WlYwBrp+19kf1TAMEkCYP6rVMAAAABAM09UwNU6FoDr6VvApQAAoMQAXMDt\u002fv+fRe5bwAAAAIA4RlbAAAAAYNWDV8DoLR7ec3VWwEoBAECZDlTAoFUDILBuU8AAAACAjrxTwFv\u002f\u002f187T17A8S\u002fdfz8dXsBdiNUfYbtUwMmgA2B2K1TABwwAALG0UcDpOADgTbJjwJO\u002f\u002f39BoGPAAAAAwB5tZMAAAAAgg0hkwBYAAMAeJWTAAAAAAACsY8AAAAAg3XxjwEOPGD035WPAAAAAgEHUY8AAAABAiWFjwAAAAKBunmPAAAAAYBKjY8D60\u002f+fbqJgwFb2\u002f58aC2HA+Zfuv5\u002f2YMBblxqhH+1gwAAAAKDE8GDAAAAAoBzqYMDLnZlguNJgwAAAAAB\u002fmmDAAAAAIOLUVMCOBYVBmTpWwP+Z\u002f18O5VzAAAAAIA00V8D\u002f\u002f\u002f8fKEZXwAAAAKDmSVfAAAAAoL1pWMAAAACAvg9fwJcIAADTtV3AtOkI4CZdY8D\u002f\u002f\u002f\u002f\u002f1BBawMaW\u002fz83kVrAAAAAQPMSU8ABAADAyDpYwAAAAECJlWPAAAAAwHKAY8AAAABAYHVjwAAAAODwpFLAp1MFQOjZU8DLRQBgyhpVwAAAAMCNmlLA53wEQM2PVcCi+v8f5INSwOXQItv5Bl\u002fAxmrz\u002fyoPX8Du0frfepRTwAAAAKBetVPAbmcEwJ23WsAAAABg96hTwDHH+h+D0FPAFgcA4PJHVMD0CgCgXrlTwGVa9n\u002fpdl7A9jX9n6T6U8DVOhaA61FdwBChAECEuVPABQkAwBD3U8AAAADgG1xUwAAAAGBNH1bAD9AigMC6WsB57S1AtrtawPo867\u002fzzVrA\u002f\u002f\u002f\u002fPzNrWsDGlv8\u002fN\u002flawAAAAODOH1rA\u002f\u002f\u002f\u002fv\u002f7eVsDE9v9feOpXwMeoIWDjzVnAxHk4geluXsANlgOgPo9VwI0TFWAOPV7AAAAAAIYxVsAP0CKAwJJewHMJAICecVTAAAAAgGgJXMApuR7gJOZZwAvy\u002fx8xKFvArIH3n8YrWcDHqCFg4yVZwBR+\u002f59wHVvAAAAAYLi+WsBtKdZf5SBewD9YIUDhGlzArlIA4CbZXcA="},"marker":{"color":{"dtype":"f8","bdata":"EHrt5DrMdj9qTefbo2VePwAAAAAAAAAAAAAAAAAAAAAHEcvPPIvAP2voKSZlM5o\u002fAAAAAAAAAAAAAAAAAAAAABg\u002fkHIu9pE\u002fAAAAAAAAAADl95zSNl63PwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABrTefbo2VePyfAZd7\u002fS5w+FFPA8daehT+SCbOvOVhGP4PA9fNUk3E\u002fYNMDdH87hz8AAAAAAAAAAAAAAAAAAAAA26RCFrzh9T4ByQSA3EW6PgAAAAAAAAAAq+2e7UcLMz8qePIvLh2wP5n+Bu99kLA\u002fak3n26Nlbj8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEunHBm72wPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2Hg4qVz3gT8AAAAAAAAAAAAAAAAAAAAAlnMPbrbctD8AAAAAAAAAAM06v6lGjdM+ak3n26NlXj8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb9OXoP3TjPs06v6lGjdM+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb+rEoR91qT8AAAAAAAAAAMKCa1ANTtU\u002fAAAAAAAAAAAAAAAAAAAAAPlxEWiq25A\u002fwjStQXXMkj+gAcMhvQw5PwAAAAAAAAAAAAAAAAAAAABHX4PfeVuLP4aOpkvmIoE\u002fAAAAAAAAAAAAAAAAAAAAAGtN59ujZV4\u002fh+QClBUbLD\u002fri4noEMIzPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADhlEOtZoWE\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8raPSrL2Ples6pBA4WU\u002fzTq\u002fqUaN0z7NOr+pRo3zPrzkqAL8Bac\u002fzTq\u002fqUaN8z6BTaMdMXx8PxFTt\u002fgSsVs\u002fT+0La6Uo9j6x9XFjN9zgPhH5\u002foyzEco+AAAAAAAAAAAAAAAAAAAAABv05eg\u002fdOM+AAAAAAAAAAAAAAAAAAAAAKL5bwDR73Q\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG\u002fTl6D908z4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD47G9BZiC\u002fPvR6GZLD31s\u002fAAAAAAAAAADbdLMekAp8PwAAAAAAAAAAAAAAAAAAAADCV\u002fNvaqU3P4ioZ95Oz1A\u002f2b2Ck5B53T74HxcCyExxPwAAAAAAAAAA5SxpBmhHRD8d5OjAZ0RHP6j5oVNpu1A\u002f3SrL4LTQIz8xrNYSIWVGPwAAAAAAAAAA9wYvsduutD+ZGKfwKOw1PzHxHYiW7T0\u002frXDpIVxfUT8udXbtHBlCP1+H\u002fRTkK6A\u002fZTsHsQG6Nz+on3jzykNgPwAAAAAAAAAAO1jEbbuHYD80N+eYORtjP1ibuBE5Akg\u002fh\u002f+3m2cicz9qEl6vUSJiP6XgPFGeP6M\u002fAAAAAAAAAAD9NWzKtV\u002fAPtbFrwstLjc\u002fdQ9JC1Bubj8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADk9u263GIM\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP01bMq1X8A+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANdUrOc\u002fqn0\u002fAAAAAAAAAAAAAAAAAAAAAKE70JVcewQ\u002fAAAAAAAAAAAAAAAAAAAAAKFpkrdiAjY\u002fuxCwDEzJqD+4C7dX8vCUPwAAAAAAAAAAUou73lEVuj89updet\u002fSBPxhtOQNWdKU\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\u002fpSw4e\u002frjT8AAAAAAAAAAKUCSQgj\u002f\u002fE+AAAAAAAAAAByftpTUtN6Pya4Dd702VY\u002frwH2oFSoND8kBYxwDg4fP+9AtzkAaBI\u002fi8Kc0oW0ED8AAAAAAAAAAAAAAAAAAAAAxP9lmGbVGD9X6R1JbhAEPxTg\u002fd2kjDM\u002fStaQLdVdgz\u002fmrSC+2LcoP59BsiyDluI+JbRgYSBelD\u002fWsM6WW5PNPvnh2EsFktg+JshGtK9ScT9rBE\u002fvSCa8PwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALB2nt\u002fM4iQ\u002fEtcW16NIOT91p0qIprNvP6IHNYT185U+AAAAAAAAAAAAAAAAAAAAAE607f82\u002fvM+Fg4Wb5D0mT8AAAAAAAAAAHdmg6GtQSU\u002fAAAAAAAAAAAH5jzFezuyPuZXx+1UgsM\u002fVbfOYX8pVz8AAAAAAAAAAE1gFfwWrGs\u002fogc1hPXzlT4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACiBzWE9fOVPm9zyJdEAQ4\u002fqlbQFHcUoj\u002fEEPdWtmuhPwAAAAAAAAAArJIcbTLXMT8ca7C+HDPqPvGZWFgqPkI\u002fAAAAAAAAAAD5geomxjyBPwAAAAAAAAAAL3PqumCE5z4HMamOBdgePwAAAAAAAAAAAAAAAAAAAAB57efjxRx9PwAAAAAAAAAAadTA4n3BDj8C333eKoDzPgAAAAAAAAAAgU1hjEf6JD+uPCRk5TcDP\u002f3cv\u002fpkyNk+7\u002f2VvT4LMz\u002fxYlzLuJw+P4vG4JMn\u002f8E+AAAAAAAAAADl6GgPfob4Pq49RW1eGJs\u002fiBsfzT\u002fbsT9ZpzHhljNVP7adk6W37J8+XBmuBDJbHD8AAAAAAAAAAAAAAAAAAAAABe8b+Nq28T4AAAAAAAAAAIsQH87Vvcc+AAAAAAAAAAAAAAAAAAAAAFXSCctEiBc\u002fAAAAAAAAAABZENlAGpT1PtnQoVgzTlQ\u002fAAAAAAAAAAAkRvVBK1tLPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7Wox\u002f\u002fpt9T4AAAAAAAAAAM85UapKG1k\u002f2BaBqHhYjj+0SvxdQgRuPzuyNT8NRiU\u002fAAAAAAAAAAAAAAAAAAAAAGa1kjrhTjY\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeS46PEsSFD8AAAAAAAAAAAAAAAAAAAAATd66EtWxTD8AAAAAAAAAADAxfV5BOtg+rRqvsGj8eT\u002fxeZ438PVSPwps+bnX+eU+FDni5fZ7RT\u002fHsc+A1iEsP7RW1PNrVw8\u002fiYqMDli4Az8AAAAAAAAAAAAAAAAAAAAA\u002fOxCmbRNSz8AAAAAAAAAAJ3FAofTAEY\u002fAAAAAAAAAACCLDCGOENBP3oXkmgk3SA\u002fAAAAAAAAAADN0lT6\u002fj5JPy7AO6w+rug+AAAAAAAAAAAAAAAAAAAAAN9EMKO3aiY\u002fAAAAAAAAAADGZ\u002f57btwVPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlsqlv6coXj8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqvUlF4fuWP87Wpuiu5TI\u002ftlD\u002fXSJhwT4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArqLFNvPO+D4AAAAAAAAAAAAAAAAAAAAAvUhsTYaJ8D4AAAAAAAAAADQhrG7BJiI\u002fAAAAAAAAAAAAAAAAAAAAAGIVNJL1rg8\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABMO\u002fLFmOIwPwAAAAAAAAAAAAAAAAAAAACOQZCPetZXPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEI3RiPjkn8\u002f91I0mkUXRD8AAAAAAAAAAAAAAAAAAAAAQSpwUBKUmj8AAAAAAAAAABB67eQ6zHY\u002fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB005bzoeMQP\u002fXlHpxXUwU\u002fkfA1ML7GKD8AAAAAAAAAANNsQMEjyA4\u002fVfFw0k7+5z4AAAAAAAAAAAAAAAAAAAAAFa99zQGWDD8AAAAAAAAAADIeQ7v\u002fIz0\u002fAAAAAAAAAADNOr+pRo3TPgAAAAAAAAAAVNesSgUxCT\u002fO3sm6+dURPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATubg+nQCMD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL1IbE2GifA+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABjuidhCi+D4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0jwnN3Vd8T4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFTGHRPUFzE\u002fSnMJn2l2Xj+3oavFN4wfP8a0O60\u002fGWE\u002fyEjq4fmA0j5qTefbo2VePwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAByQJC5bn0T4AAAAAAAAAACTEVzfcJHw\u002fAAAAAAAAAADiDmGdHKToPoFz7XseZkA\u002f0mERhzmmaj8NmtflghKRP7\u002f4FCJfTms\u002fAAAAAAAAAABZVcPG2+HzPjqbDKUbeik\u002fhYb7yGYw5z4AAAAAAAAAAOsnc4+lMSg\u002f7GWOfHCm8z7V72id4goGPwAAAAAAAAAAAAAAAAAAAADrFelgsEvQPlJrOIyqx\u002fU+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABDmKHZVaWuPiTwhzZV8Kk+b6nA4XiT5j4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMKtx7iNW9M+qrFG2cAGmT7PwHXk1tsQPxk+R34DMeI+AAAAAAAAAAAAAAAAAAAAABv05eg\u002fdNM+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="},"coloraxis":"coloraxis","size":{"dtype":"i2","bdata":"AwACAAEAAgCVADgAAgABAAcAAQCZAAIAAgABAAEAAQACAAgAOgAfAD8ASgABAAUAGAALAAcAEwBxAFUABAABAAEAAgASAAMAAgACAAIABAABAAEAFgACAAMAAwABAAIAAgACAAIAAgADAAMAAgABAAMADQADACIAAgACAAcACAACAAEAAQADAAUAAQABAAIAAwAEAAEAAQABAAMAAwABAAMAAgACAAIAAQACAAUAAwAEAA8AAgAGAAMABQADAAMAAgACAAMAAgADAAQAAgACAAMAAQADAAIABAACAAEAAgADAAIAAQACAAEAAQABAAEAAgADAAMAAQACAAEABAAIAAsACQArAAQACgAOABQABgANAAQAdQAJAA8AEQAOAHIAJgAFAAEAOQBBAAsAIAAGAEYAAwADAAQAEwABAAEAAQABAAwAAQABAAEAAQABAAIAAQABAAEAAQABABAAAQABAAIAAQABAAkAbgBYAAEAigAXAE0AAQADAAMAVQABAAYAAgAxACcACAAGABcAIQAFAAMABgATAAgALgAQABQANgASABEAMgBLAAEAAgAEAAoADAA\u002fAAoACwAGABQANQACAB8AAgAQAJUAEQACAEgABAABAAQAAgAJAAQAUQBlAAUAIAAJABEAAQApAAMADgAcAAIABQAVAAMAFAATAAEABQATAAwAJAAeAA0AAgAXAEcAVQAcAAYABAAFAAIACwACAAQAAwABAAsAAwANAAoACgAJAAIAAQABAAYAAwADABQAHAAxAAwAAQABAAgAAgADAAMABwADAAIACgADAAsAFAAWAA0ACgAOAAcADgABAAMACQAFABsAAQASAAQAAQASABAAAQACAAUAAwAJAAEACAAKAAQAIQABAAEAAwAMAAoACgAHAAEABgAGAAQADAACAAIAAwABAAQAAwAEAAUABgADAAIAAQAHAAEAAQAYAAEABQABAEMACQABAAEACAABAAQAAgABAAIAAgAJAAQABQABAAcAAgABAAUABwAFAAIAAgACAAIABwAIAAEAAgABAAIABQABAAIAAgABAAEAAQABAAIAAwACAAQAAQABAAEAAwADAAEABAACAAIAAgACAAMABAABAAIAAQABAAIAAgACAAMADgACAAMABAACAAEAAgACAAYAAgABAAMAAQAHABIAHwAwACAAAQADAAUAAgABAAMAAgAFAAEAAgACAAQAAQABAAIAAQABAAEAAgABAAEAAQADAAMAAwABAAEAAgACAAIAAgABAAEAAQACAAIAAwACAAIAAQACAAEAAQABAAEAAQABAAIAAQABAAkAAwADAAIAAQABAAMAAgACAAIAAgACAAIAAgACAAEAAgABAAIAAgABAAEAAQABAAEAAQABAAEAAQABAAEAAgABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQA="},"sizemode":"area","sizeref":0.1494140625,"symbol":"circle"},"mode":"markers","name":"","showlegend":false,"type":"scattergeo"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#185FA5","#D85A30","#0F6E56","#534AB7","#854F0B","#6B4C9A","#B8432F","#1D7A6B"],"font":{"color":"#2c2c2a","family":"Georgia, 'Times New Roman', serif","size":13},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left","bgcolor":"white","bordercolor":"#d3d1c7","font":{"color":"#2c2c2a","size":12}},"hovermode":"closest","mapbox":{"style":"light"},"margin":{"b":60,"l":60,"r":40,"t":70},"paper_bgcolor":"#fafaf8","plot_bgcolor":"#fafaf8","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.5,"font":{"color":"#2c2c2a","size":16},"xanchor":"center"},"xaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"yaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"legend":{"bgcolor":"rgba(250,250,248,0.9)","bordercolor":"#d3d1c7","borderwidth":1,"font":{"size":12}}}},"geo":{"domain":{"x":[0.0,1.0],"y":[0.0,1.0]},"center":{},"scope":"usa","bgcolor":"#f0ede4","landcolor":"#e8e4d8","lakecolor":"#c8dde8","coastlinecolor":"#b4b2a9","coastlinewidth":0.8,"countrycolor":"#b4b2a9","showlakes":true,"showrivers":false,"showsubunits":true,"subunitcolor":"#d3d1c7","subunitwidth":0.5},"coloraxis":{"colorbar":{"title":{"text":"Betweenness\u003cbr\u003eCentrality","font":{"size":12}},"tickfont":{"size":11},"thickness":14,"len":0.75},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"legend":{"tracegroupgap":0,"itemsizing":"constant"},"title":{"text":"US Domestic Airport Network — Node size: degree &nbsp;|&nbsp; Color: betweenness centrality","font":{"size":14}},"font":{"family":"Georgia, serif","color":"#2c2c2a"},"margin":{"l":0,"r":0,"t":50,"b":0},"paper_bgcolor":"#fafaf8","height":520},                        {"responsive": true}                    ).then(function(){
+                            
+var gd = document.getElementById('6a131ff1-e073-48d9-b9ee-237cec94ad37');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };            </script>        </div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: US airport network. Node size scales with degree; color encodes betweenness centrality. Hover for airport details.
+</figcaption>
+</figure>
+</div>
+</div>
+<p>The map makes the hub-and-spoke architecture immediately visible. A handful of large-degree airports — concentrated in the South, Midwest, and East — dominate the network, while smaller regional airports appear as peripheral spokes. Note that high degree and high betweenness do not always coincide: some mid-tier airports serve as critical bridges between regional clusters without themselves being large hubs.</p>
+</section>
+<section id="network-topology" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="network-topology"><span class="header-section-number">5.3</span> Network Topology</h3>
+<p>The force-directed layout strips away geography to reveal pure network structure. Hub airports — those with many routes — migrate to the center, pulled there by the gravity of their connections. Regional clusters are visible as dense local neighborhoods; the long edges crossing from one cluster to another represent the high-betweenness airports that serve as critical bridges. Remove those bridges, and the clusters become islands.</p>
+</section>
+<section id="degree-distribution" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="degree-distribution"><span class="header-section-number">5.4</span> Degree Distribution</h3>
+<div id="cell-fig-degree-dist" class="cell" data-execution_count="6">
+<div id="fig-degree-dist" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-degree-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script><script>if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}</script>                <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.4.0.min.js" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" crossorigin="anonymous"></script>                <div id="c69bffe0-b0c1-42a2-ac15-880853c7d72b" class="plotly-graph-div" style="height:420px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("c69bffe0-b0c1-42a2-ac15-880853c7d72b")) {                    Plotly.newPlot(                        "c69bffe0-b0c1-42a2-ac15-880853c7d72b",                        [{"marker":{"color":"#185FA5","line":{"color":"#0d3d6b","width":0.5},"opacity":0.75,"size":7},"mode":"markers","name":"Empirical CCDF","x":{"dtype":"i2","bdata":"AQACAAMABAAFAAYABwAIAAkACgALAAwADQAOAA8AEAARABIAEwAUABUAFgAXABgAGQAaABsAHAAdAB4AHwAgACEAIgAjACQAJQAmACcAKAApACoAKwAsAC0ALgAvADAAMQAyADMANAA1ADYANwA4ADkAOgA7ADwAPQA+AD8AQABBAEIAQwBEAEUARgBHAEgASQBKAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AXgBfAGAAYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuAG8AcABxAHIAcwB0AHUAdgB3AHgAeQB6AHsAfAB9AH4AfwCAAIEAggCDAIQAhQCGAIcAiACJAIoAiwCMAI0AjgCPAJAAkQCSAJMAlACVAJYAlwCYAJkA"},"y":{"dtype":"f8","bdata":"AAAAAAAA8D98jRnSFOTmP5qC3Ib\u002fNOA\u002f6oVp1aEy2T9GXKFnqeLVPz6spPT3hNM\u002foAYanUT70T9pP0IEI67QPzGtOlQmO88\u002fwh6LIuOgzD+6bo6vMUPKP+hZqng1m8g\u002ffSN5AMsvxz96y\u002fpG8gDGPw+Vyc6HlcQ\u002fQNhjUWQcxD+kXphWHSrDPwflzFvWN8I\u002fA41Oov0IwT\u002f\u002faaDRSbS\u002fPyn9PeF03bw\u002fW0DYY1FkvD++xgxpCnK7P1OQ2\u002fCfBro\u002ftxYQ9lgUuT+3FhD2WBS5P7cWEPZYFLk\u002f6FmqeDWbuD99I3kAyy+3P30jeQDLL7c\u002fr2YTg6e2tj9EMOIKPUu1P9n5sJLS37M\u002fPYDll4vtsj9uw38aaHSyP27DfxpodLI\u002foAYanUT7sT+gBhqdRPuxP9JJtB8hgrE\u002fA41Oov0IsT8DjU6i\u002fQixPzXQ6CTaj7A\u002fNdDoJNqPsD9nE4OnthawP2cTg6e2FrA\u002fZxODp7YWsD8xrTpUJjuvPzGtOlQmO68\u002flDNvWd9Irj9bQNhjUWSsP77GDGkKcqs\u002fvsYMaQpyqz++xgxpCnKrPyJNQW7Df6o\u002fhdN1c3yNqT+F03VzfI2pP+hZqng1m6g\u002fTODefe6opz+vZhODp7amP69mE4OntqY\u002fr2YTg6e2pj+vZhODp7amP69mE4OntqY\u002fdnN8jRnSpD92c3yNGdKkP9n5sJLS36M\u002f2fmwktLfoz89gOWXi+2iPz2A5ZeL7aI\u002fPYDll4vtoj+gBhqdRPuhPwONTqL9CKE\u002fZxODp7YWoD9nE4OnthagP5Qzb1nfSJ4\u002fW0DYY1FknD9bQNhjUWScPyJNQW7Df5o\u002fIk1BbsN\u002fmj8iTUFuw3+aPyJNQW7Df5o\u002f6FmqeDWbmD\u002foWap4NZuYP+hZqng1m5g\u002f6FmqeDWbmD89gOWXi+2SPz2A5ZeL7ZI\u002fPYDll4vtkj8DjU6i\u002fQiRPwONTqL9CJE\u002fA41Oov0IkT8DjU6i\u002fQiRPwONTqL9CJE\u002fA41Oov0IkT8DjU6i\u002fQiRPwONTqL9CJE\u002fA41Oov0IkT8DjU6i\u002fQiRPwONTqL9CJE\u002fA41Oov0IkT8DjU6i\u002fQiRP5Qzb1nfSI4\u002flDNvWd9Ijj+UM29Z30iOP5Qzb1nfSI4\u002flDNvWd9Ijj+UM29Z30iOP5Qzb1nfSI4\u002flDNvWd9Ijj+UM29Z30iOPyJNQW7Df4o\u002fIk1BbsN\u002fij8iTUFuw3+KP69mE4OntoY\u002fPYDll4vtgj89gOWXi+2CPz2A5ZeL7YI\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002flDNvWd9Ifj+UM29Z30h+P5Qzb1nfSH4\u002fr2YTg6e2dj+vZhODp7Z2P69mE4OntnY\u002fr2YTg6e2dj+vZhODp7Z2P69mE4OntnY\u002fr2YTg6e2dj+vZhODp7Z2P69mE4OntnY\u002fr2YTg6e2dj+vZhODp7Z2P5Qzb1nfSF4\u002flDNvWd9IXj+UM29Z30heP5Qzb1nfSF4\u002f"},"type":"scatter"},{"line":{"color":"#D85A30","dash":"dash","width":2.5},"mode":"lines","name":"Power-law fit (γ ≈ 1.26)","x":{"dtype":"i2","bdata":"AQACAAMABAAFAAYABwAIAAkACgALAAwADQAOAA8AEAARABIAEwAUABUAFgAXABgAGQAaABsAHAAdAB4AHwAgACEAIgAjACQAJQAmACcAKAApACoAKwAsAC0ALgAvADAAMQAyADMANAA1ADYANwA4ADkAOgA7ADwAPQA+AD8AQABBAEIAQwBEAEUARgBHAEgASQBKAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AXgBfAGAAYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuAG8AcABxAHIAcwB0AHUAdgB3AHgAeQB6AHsAfAB9AH4AfwCAAIEAggCDAIQAhQCGAIcAiACJAIoAiwCMAI0AjgCPAJAAkQCSAJMAlACVAJYAlwCYAJkA"},"y":{"dtype":"f8","bdata":"xhTiiNQzE0DDHE9B4gkAQGzSzxtHP\u002fM\u002fHG2F5cXK6j8Vh0hgCDrkP\u002f\u002fQrfpxE+A\u002fNIvoLSZ62j89B+Sls2DWP1mdzYHAStM\u002fgtkIlOLk0D+L5J5KJvfNPyIyrsG+2so\u002fkPkDkVhHyD9G1xyXXB3GP1UyHUMXRsQ\u002fqSACBNOwwj+ro\u002fKGAVHBP42wQmcHHcA\u002fsdhKaNkavj+rOBznmzi8P25csfnuibo\u002f2DGTkToHuT9141aSTKq3Px+vy9AKbrY\u002fdmDifjhOtT\u002fbYSSfSUe0P6P47L5AVrM\u002fQS+gUJR4sj9V\u002f4O\u002fGayxP8O5K9z07rA\u002fj6cNnoo\u002fsD8wlg3z7DivP7ODNnMDCa4\u002fbsuI3zjtrD8d+8xLr+OrP0VBaiPB6qo\u002fJlZlLvkAqj\u002f6IbvlCyWpP84o4djRVag\u002fPUcD80KSpz8MCIJ4ctmmP3J38pyLKqY\u002fhpH0l86EpT+bIwMkjuekP21pMVYtUqQ\u002fj\u002fDXwB3Eoz\u002ffFabV3TyjP5RziH33u6I\u002ffw1w3v5Aoj9tgVVIkcuhP8E55kNUW6E\u002fB40rvvTvoD8cRDZNJomgP0Gkc4qiJqA\u002fpI6j\u002f1CQnz+y+4hK+NqeP8b+K9nLLJ4\u002fxr10s2SFnT+AHTlMY+ScP\u002f6HI9tuSZw\u002f\u002fLSbxzS0mz8ourQiaCSbP+c1Zi7BmZo\u002fI1uP8PwTmj8FfnPQ3JKZP2\u002fEiT0mFpk\u002fh9WdXqKdmD+arV7IHSmYP+zXkzpouJc\u002ffdRIY1RLlz\u002fo51Knt+GWP\u002f9np+9pe5Y\u002f1SwIe0UYlj+ObpmzJriVP9dMAAjsWpU\u002fnLuzx3UAlT9LzjICpqiUP5R+22hgU5Q\u002f+DwkM4oAlD+A9QAFCrCTP0bUQdfHYZM\u002fSRa\u002f4awVkz\u002fPoimHo8uSP7IeXEKXg5I\u002fxa8LlXQ9kj8azLr3KPmRP\u002fc\u002f08qitpE\u002fFBnPSNF1kT+xZlp5pDaRP8nDWSUN+ZA\u002ffHHDy\u002fy8kD8AajqXZYKQP+NNXFQ6SZA\u002fpF+0aG4RkD+d642U67WPP1y\u002fU++JS48\u002fl2c+4aHjjj\u002fAxFFeHn6OP71nGELrGo4\u002ffSt6Q\u002fW5jT\u002frhFPpKVuNP6vVv393\u002fow\u002fFSgKDs2jjD9OujhNGkuMPwGoKJ9P9Is\u002fptYvBl6fiz9vCzwdN0yLP9bDZhDN+oo\u002fAwz2lRKrij8IJMPn+lyKPzZNAL15EIo\u002fypZXRIPFiT8Q81weDHyJPwFKTlgJNIk\u002fcZ0cZ3DtiD\u002fHrbkiN6iIP37gpcFTZIg\u002fXHW61LwhiD+UXSxDaeCHP7RIxEZQoIc\u002f8rZIaGlhhz+7Fxd8rCOHP1Mu6Z4R54Y\u002ftCXEMpGrhj+P6A7cI3GGP8R6zX7CN4Y\u002fuDf\u002fO2b\u002fhT+Q+h1vCMiFP85XvKuikYU\u002feStBuy5chT\u002f\u002f3L6apieFP1zS5HgE9IQ\u002fj6UJtELBhD8DxUzYW4+EP988zp1KXoQ\u002fwXr75gkuhD+I7+++lP6DPyOE6Ffmz4M\u002fWOXICfqhgz+aurFQy3SDP8TopstVSIM\u002fhA5FO5Ucgz8udoWAhfGCP5jAj5six4I\u002fhpqYqmidgj\u002fu1szoU3SCP3ZQSK3gS4I\u002fZP8Xagskgj\u002f9t0ar0PyBP00N9BUt1oE\u002fs9t0Zx2wgT9eBX10noqBPyrxUSitZYE\u002f"},"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#185FA5","#D85A30","#0F6E56","#534AB7","#854F0B","#6B4C9A","#B8432F","#1D7A6B"],"font":{"color":"#2c2c2a","family":"Georgia, 'Times New Roman', serif","size":13},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left","bgcolor":"white","bordercolor":"#d3d1c7","font":{"color":"#2c2c2a","size":12}},"hovermode":"closest","mapbox":{"style":"light"},"margin":{"b":60,"l":60,"r":40,"t":70},"paper_bgcolor":"#fafaf8","plot_bgcolor":"#fafaf8","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.5,"font":{"color":"#2c2c2a","size":16},"xanchor":"center"},"xaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"yaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"legend":{"bgcolor":"rgba(250,250,248,0.9)","bordercolor":"#d3d1c7","borderwidth":1,"font":{"size":12}}}},"annotations":[{"align":"left","bgcolor":"rgba(250,250,248,0.85)","bordercolor":"#d3d1c7","borderwidth":1,"font":{"color":"#2c2c2a","size":12},"showarrow":false,"text":"\u003cb\u003eγ ≈ 1.26\u003c\u002fb\u003e\u003cbr\u003e\u003cspan style='font-size:11px;color:#888'\u003escale-free range: 2 &lt; γ &lt; 3\u003c\u002fspan\u003e","x":0.72,"xref":"paper","y":0.18,"yref":"paper"}],"xaxis":{"type":"log","title":{"text":"Degree k"},"showgrid":true},"yaxis":{"type":"log","title":{"text":"P(K ≥ k)"},"showgrid":true},"legend":{"x":0.04,"y":0.08},"title":{"text":"Degree Distribution — Complementary CDF (log-log scale)"},"height":420},                        {"responsive": true}                    ).then(function(){
+                            
+var gd = document.getElementById('c69bffe0-b0c1-42a2-ac15-880853c7d72b');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };            </script>        </div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-degree-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Degree distribution of the US airport network on a log-log scale. A power-law fit to the complementary CDF is overlaid.
+</figcaption>
+</figure>
+</div>
+</div>
+<p>The degree distribution follows an approximate power law with exponent <span class="math inline">\(\gamma \approx\)</span> 1.26, consistent with the range <span class="math inline">\(2 &lt; \gamma &lt; 3\)</span> characteristic of scale-free networks <span class="citation" data-cites="barabasi1999emergence">(<a href="#ref-barabasi1999emergence" role="doc-biblioref">Barabási and Albert 1999</a>)</span>. The log-log CCDF is approximately linear across more than a decade of degree values. The deviation at high degree is expected: the finite size of the network and the physical constraint of airport capacity impose natural cutoffs on how many routes any single hub can support.</p>
+</section>
+<section id="hub-rankings-by-centrality" class="level3" data-number="5.5">
+<h3 data-number="5.5" class="anchored" data-anchor-id="hub-rankings-by-centrality"><span class="header-section-number">5.5</span> Hub Rankings by Centrality</h3>
+<div id="cell-fig-centrality" class="cell" data-execution_count="7">
+<div id="fig-centrality" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-centrality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script><script>if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}</script>                <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.4.0.min.js" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" crossorigin="anonymous"></script>                <div id="4a163654-8f23-481a-9180-eea29695e16d" class="plotly-graph-div" style="height:640px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("4a163654-8f23-481a-9180-eea29695e16d")) {                    Plotly.newPlot(                        "4a163654-8f23-481a-9180-eea29695e16d",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eBetweenness: %{x:.4f}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":{"dtype":"f8","bdata":"woJrUA1O1T\u002fmV8ftVILDPwcRy888i8A\u002fawRP70gmvD9Si7veURW6P+X3nNI2Xrc\u002flnMPbrbctD\u002f3Bi+x2660P4gbH80\u002f27E\u002fBLpxwZu9sD+Z\u002fgbvfZCwPyp48i8uHbA\u002fb+rEoR91qT+7ELAMTMmoP7zkqAL8Bac\u002fGG05A1Z0pT+l4DxRnj+jP6pW0BR3FKI\u002fxBD3VrZroT9fh\u002f0U5CugP649RW1eGJs\u002fQSpwUBKUmj9r6CkmZTOaPxYOFm+Q9Jk\u002fKr1JReH7lj8="},"colorscale":[[0,"#d6c4f5"],[1,"#534AB7"]],"showscale":false},"name":"Betweenness","orientation":"h","x":{"dtype":"f8","bdata":"woJrUA1O1T\u002fmV8ftVILDPwcRy888i8A\u002fawRP70gmvD9Si7veURW6P+X3nNI2Xrc\u002flnMPbrbctD\u002f3Bi+x2660P4gbH80\u002f27E\u002fBLpxwZu9sD+Z\u002fgbvfZCwPyp48i8uHbA\u002fb+rEoR91qT+7ELAMTMmoP7zkqAL8Bac\u002fGG05A1Z0pT+l4DxRnj+jP6pW0BR3FKI\u002fxBD3VrZroT9fh\u002f0U5CugP649RW1eGJs\u002fQSpwUBKUmj9r6CkmZTOaPxYOFm+Q9Jk\u002fKr1JReH7lj8="},"y":["ANC","DEN","ORD","SEA","DFW","ATL","BET","MSP","SLC","FAI","LAX","LAS","OTZ","CLT","OME","PHX","BOS","IAD","IAH","DTW","SFO","AKN","STL","CLE","JNU"],"type":"bar","xaxis":"x","yaxis":"y"},{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eRoutes: %{x}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":{"dtype":"i2","bdata":"mQCVAJUAigB1AHIAcQBuAGUAWABVAFUAVQBRAE0ASwBKAEgARwBGAEMAQQA\u002fAD8AOgA="},"colorscale":[[0,"#b8d4f0"],[1,"#185FA5"]],"showscale":false},"name":"Degree","orientation":"h","x":{"dtype":"i2","bdata":"mQCVAJUAigB1AHIAcQBuAGUAWABVAFUAVQBRAE0ASwBKAEgARwBGAEMAQQA\u002fAD8AOgA="},"y":["ATL","ORD","DEN","DFW","MSP","DTW","LAS","CLT","IAH","PHL","SLC","DCA","LAX","IAD","PHX","SEA","MCO","EWR","SFO","BOS","MDW","LGA","TPA","BWI","FLL"],"type":"bar","xaxis":"x2","yaxis":"y2"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#185FA5","#D85A30","#0F6E56","#534AB7","#854F0B","#6B4C9A","#B8432F","#1D7A6B"],"font":{"color":"#2c2c2a","family":"Georgia, 'Times New Roman', serif","size":13},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left","bgcolor":"white","bordercolor":"#d3d1c7","font":{"color":"#2c2c2a","size":12}},"hovermode":"closest","mapbox":{"style":"light"},"margin":{"b":60,"l":60,"r":40,"t":70},"paper_bgcolor":"#fafaf8","plot_bgcolor":"#fafaf8","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.5,"font":{"color":"#2c2c2a","size":16},"xanchor":"center"},"xaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"yaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"legend":{"bgcolor":"rgba(250,250,248,0.9)","bordercolor":"#d3d1c7","borderwidth":1,"font":{"size":12}}}},"xaxis":{"anchor":"y","domain":[0.0,0.425],"showgrid":true},"yaxis":{"anchor":"x","domain":[0.0,1.0],"autorange":"reversed"},"xaxis2":{"anchor":"y2","domain":[0.575,1.0],"showgrid":true},"yaxis2":{"anchor":"x2","domain":[0.0,1.0],"autorange":"reversed"},"annotations":[{"font":{"size":16},"showarrow":false,"text":"Top 25 — Betweenness Centrality","x":0.2125,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Top 25 — Degree","x":0.7875,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"}],"title":{"font":{"size":15},"text":"Airport Centrality Rankings — Top 25"},"height":640,"showlegend":false},                        {"responsive": true}                    ).then(function(){
+                            
+var gd = document.getElementById('4a163654-8f23-481a-9180-eea29695e16d');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };            </script>        </div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-centrality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Top 25 airports by betweenness centrality (left) and degree (right). Airports are labeled by IATA code; hover for full name.
+</figcaption>
+</figure>
+</div>
+</div>
+<p>The two rankings tell different stories. Degree centrality captures raw connectivity — the largest hubs by sheer number of destinations served. Betweenness centrality identifies <em>structural brokers</em>: airports that sit at the intersection of many shortest paths through the network, regardless of how many direct routes they operate. An airport can rank highly on betweenness without appearing in the degree top-ten if it serves as the primary gateway between two otherwise loosely connected regional clusters.</p>
+</section>
+<section id="small-world-properties" class="level3" data-number="5.6">
+<h3 data-number="5.6" class="anchored" data-anchor-id="small-world-properties"><span class="header-section-number">5.6</span> Small-World Properties</h3>
+<div class="cell" data-execution_count="8">
+<div id="tbl-smallworld" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="8">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-smallworld-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Small-world metrics compared to an equivalent random graph
+</figcaption>
+<div aria-describedby="tbl-smallworld-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="14">
+<style type="text/css">
+</style>
+
+<table id="T_32c43" class="cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th id="T_32c43_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Metric</th>
+<th id="T_32c43_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Airport Network</th>
+<th id="T_32c43_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Random Graph (ER)</th>
+<th id="T_32c43_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Ratio C/C_rand or L/L_rand</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_32c43_row0_col0" class="data row0 col0">Clustering coefficient C</td>
+<td id="T_32c43_row0_col1" class="data row0 col1">0.4944</td>
+<td id="T_32c43_row0_col2" class="data row0 col2">0.0190</td>
+<td id="T_32c43_row0_col3" class="data row0 col3">26.0×</td>
+</tr>
+<tr class="even">
+<td id="T_32c43_row1_col0" class="data row1 col0">Avg. path length L</td>
+<td id="T_32c43_row1_col1" class="data row1 col1">3.200</td>
+<td id="T_32c43_row1_col2" class="data row1 col2">2.701</td>
+<td id="T_32c43_row1_col3" class="data row1 col3">1.18×</td>
+</tr>
+<tr class="odd">
+<td id="T_32c43_row2_col0" class="data row2 col0">Ratio to random</td>
+<td id="T_32c43_row2_col1" class="data row2 col1">—</td>
+<td id="T_32c43_row2_col2" class="data row2 col2">—</td>
+<td id="T_32c43_row2_col3" class="data row2 col3">σ = 21.97</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The clustering coefficient of the airport network is many times larger than that of an equivalent random graph, while the average path length is close to the random-graph value. This combination — high clustering, short paths — is the defining signature of small-world structure <span class="citation" data-cites="watts1998collective">(<a href="#ref-watts1998collective" role="doc-biblioref">Watts and Strogatz 1998</a>)</span>. In plain terms: airports tend to cluster into regional communities (carriers concentrate service in geographic hubs), yet the global network is so well-connected that even remote airports are just a few hops from any other.</p>
+</section>
+<section id="robustness-analysis-1" class="level3" data-number="5.7">
+<h3 data-number="5.7" class="anchored" data-anchor-id="robustness-analysis-1"><span class="header-section-number">5.7</span> Robustness Analysis</h3>
+<div id="cell-fig-robustness" class="cell" data-execution_count="9">
+<div id="fig-robustness" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-robustness-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script><script>if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}</script>                <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.4.0.min.js" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" crossorigin="anonymous"></script>                <div id="a017d0c2-fd6d-4e93-8922-bef247c1ed25" class="plotly-graph-div" style="height:440px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("a017d0c2-fd6d-4e93-8922-bef247c1ed25")) {                    Plotly.newPlot(                        "a017d0c2-fd6d-4e93-8922-bef247c1ed25",                        [{"fill":"tozeroy","fillcolor":"rgba(15,110,86,0.08)","line":{"color":"#0F6E56","width":2.5},"mode":"lines","name":"Random failure (mean, 10 trials)","x":{"dtype":"f8","bdata":"AAAAAAAAAAA72rxPccmQPzvavE9xyaA\u002fWEeb9ykuqT872rxPccmwP8oQrKPN+7Q\u002fWEeb9ykuuT\u002fnfYpLhmC9PzvavE9xycA\u002fgnW0eZ\u002fiwj\u002fKEKyjzfvEPxGso837FMc\u002fWEeb9ykuyT+g4pIhWEfLP+d9ikuGYM0\u002fLxmCdbR5zz872rxPccnQP9+nuGQI1tE\u002fgnW0eZ\u002fi0j8mQ7CONu\u002fTP8oQrKPN+9Q\u002fbd6nuGQI1j8RrKPN+xTXP7V5n+KSIdg\u002fWEeb9yku2T\u002f8FJcMwTraP6DikiFYR9s\u002fRLCONu9T3D\u002fnfYpLhmDdP4tLhmAdbd4\u002fLxmCdbR53z9p8z7FJUPgPzvavE9xyeA\u002fDcE62rxP4T\u002ffp7hkCNbhP7GONu9TXOI\u002fgnW0eZ\u002fi4j9UXDIE62jjPyZDsI427+M\u002f+CkuGYJ15D\u002fKEKyjzfvkP5z3KS4ZguU\u002fbd6nuGQI5j8\u002fxSVDsI7mPxGso837FOc\u002f45IhWEeb5z+1eZ\u002fikiHoP4dgHW3ep+g\u002fWEeb9yku6T8qLhmCdbTpP\u002fwUlwzBOuo\u002fzvsUlwzB6j+g4pIhWEfrP3LJEKyjzes\u002fRLCONu9T7D8VlwzBOtrsP+d9ikuGYO0\u002fuWQI1tHm7T+LS4ZgHW3uP10yBOto8+4\u002fLxmCdbR57z8AAAAAAADwPw=="},"y":{"dtype":"f8","bdata":"AAAAAAAA8D9uNHavojnvP76K5rz0hu4\u002fsOW1nsOd7T\u002fNNm2eFoHsP2sPDRYns+s\u002fLVwSXj4d6z+yVqwz\u002fmLqP5pkybB0v+k\u002fg9yG\u002fzTQ6D9CyPwBu8jnP+Q2\u002fKeBRuc\u002fkb3dyXuk5j88RL\u002frdQLmP97njnphWuU\u002fxip84PyQ5D\u002ftKXWKOaDjP1F72abN0+I\u002feBAyf8Au4j\u002fIMdKj7aHhPyM2hFspG+E\u002f2Z93EDJ\u002f4D+4yoL6mdXfPw0WJ7Nrrt0\u002fRhAUbOqj3D\u002fSYHEyu+baPwJ4TFgr1tk\u002fRlVLpLjR2D8FQcGmPsrXP437vj5ZwdU\u002f3VEvTKsO1T9UCChJy9zTP1JGCb6o+dI\u002f03VzfI0Z0j\u002fQHfXCtOrQP\u002fWGjj47rs8\u002fGI+YdDAAzj+Ng3LmLevLP7tujq8xQ8o\u002fvqGjz47rxz8KNvVRvlXGP88Wn\u002f\u002fD2cM\u002fbsN\u002fGmh0wj8iNoRbKRvBPzCtOlQmO78\u002fkNvwnwYavT99HCM92h66PzYau1fRnLc\u002f3FEvTKsOtT9mDC3kxQWzPxDYRT6Oka4\u002fa6590JVBqz\u002f6x0\u002fleXinPx2r8IHzQ6I\u002f2OsEDPG9mT92c3yNGdKUPwxEodifd5A\u002f0EJeXDBxhD9lBdcg1fR1P0IpjEdMOmg\u002fkjNvWd9IXj8AAAAAAAAAAA=="},"type":"scatter"},{"fill":"tozeroy","fillcolor":"rgba(216,90,48,0.08)","line":{"color":"#D85A30","width":2.5},"mode":"lines","name":"Targeted attack (betweenness order)","x":[0.0,0.0166358595194085,0.033271719038817,0.04990757855822551,0.066543438077634,0.08317929759704251,0.09981515711645102,0.11645101663585952,0.133086876155268,0.14972273567467653,0.16635859519408502,0.18299445471349354,0.19963031423290203,0.21626617375231053,0.23290203327171904,0.24953789279112754,0.266173752310536,0.2828096118299446,0.29944547134935307,0.31608133086876156,0.33271719038817005,0.34935304990757854,0.3659889094269871,0.3826247689463956,0.39926062846580407,0.41589648798521256,0.43253234750462105,0.4491682070240296,0.4658040665434381,0.4824399260628466,0.49907578558225507,0.5157116451016636,0.532347504621072,0.5489833641404805,0.5656192236598891,0.5822550831792976,0.5988909426987061,0.6155268022181146,0.6321626617375231,0.6487985212569316,0.6654343807763401,0.6820702402957486,0.6987060998151571,0.7153419593345656,0.7319778188539742,0.7486136783733827,0.7652495378927912,0.7818853974121996,0.7985212569316081,0.8151571164510166,0.8317929759704251,0.8484288354898336,0.8650646950092421,0.8817005545286506,0.8983364140480592,0.9149722735674677,0.9316081330868762,0.9482439926062847,0.9648798521256932,0.9815157116451017,0.9981515711645101,1.0],"y":[1.0,0.5951940850277264,0.512014787430684,0.38817005545286504,0.3456561922365989,0.29944547134935307,0.27911275415896486,0.20702402957486138,0.13123844731977818,0.1256931608133087,0.07578558225508318,0.036968576709796676,0.014787430683918669,0.014787430683918669,0.009242144177449169,0.009242144177449169,0.009242144177449169,0.009242144177449169,0.009242144177449169,0.009242144177449169,0.009242144177449169,0.0073937153419593345,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.005545286506469501,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0036968576709796672,0.0018484288354898336,0.0018484288354898336,0.0018484288354898336,0.0018484288354898336,0.0],"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#185FA5","#D85A30","#0F6E56","#534AB7","#854F0B","#6B4C9A","#B8432F","#1D7A6B"],"font":{"color":"#2c2c2a","family":"Georgia, 'Times New Roman', serif","size":13},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left","bgcolor":"white","bordercolor":"#d3d1c7","font":{"color":"#2c2c2a","size":12}},"hovermode":"closest","mapbox":{"style":"light"},"margin":{"b":60,"l":60,"r":40,"t":70},"paper_bgcolor":"#fafaf8","plot_bgcolor":"#fafaf8","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.5,"font":{"color":"#2c2c2a","size":16},"xanchor":"center"},"xaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"yaxis":{"automargin":true,"gridcolor":"#e4e2d8","linecolor":"#d3d1c7","ticks":"","title":{"standoff":15},"zerolinecolor":"#d3d1c7","zerolinewidth":2,"tickfont":{"size":11}},"legend":{"bgcolor":"rgba(250,250,248,0.9)","bordercolor":"#d3d1c7","borderwidth":1,"font":{"size":12}}}},"shapes":[{"line":{"color":"#888780","dash":"dot","width":1.2},"type":"line","x0":0.04990757855822551,"x1":0.04990757855822551,"xref":"x","y0":0,"y1":1,"yref":"y domain"}],"annotations":[{"font":{"color":"#2c2c2a","size":11},"showarrow":false,"text":"  50% fragmentation\u003cbr\u003e  at 5% removal","x":0.04990757855822551,"xanchor":"left","xref":"x","y":1,"yanchor":"top","yref":"y domain"}],"xaxis":{"title":{"text":"Fraction of nodes removed"},"range":[0,1],"tickformat":".0%"},"yaxis":{"title":{"text":"LCC \u002f original network size"},"range":[0,1.05],"tickformat":".0%"},"legend":{"x":0.55,"y":0.95},"title":{"text":"Network Robustness — Random Failure vs. Targeted Attack"},"height":440},                        {"responsive": true}                    ).then(function(){
+                            
+var gd = document.getElementById('a017d0c2-fd6d-4e93-8922-bef247c1ed25');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };            </script>        </div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-robustness-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Network robustness under random failure and targeted attack. The y-axis shows the largest connected component (LCC) as a fraction of the original network size as nodes are progressively removed.
+</figcaption>
+</figure>
+</div>
+</div>
+<p>The divergence between the two curves is the central empirical result of this section. Under random failure — analogous to individual airport closures from weather, mechanical failure, or labor action — the network degrades gracefully: the LCC shrinks slowly even as a substantial fraction of airports are removed, because the probability of randomly hitting a critical hub is low. Under targeted attack — the removal of airports in descending order of betweenness centrality — the network fragments far more rapidly. The gap between the two curves quantifies the structural risk embedded in the hub-and-spoke design.</p>
+<p>This result is not unique to air travel. <span class="citation" data-cites="albert2000error">Albert et al. (<a href="#ref-albert2000error" role="doc-biblioref">2000</a>)</span> demonstrated the same pattern in the internet topology and in metabolic networks: scale-free graphs are simultaneously robust to random failure and fragile to deliberate attack, precisely because the hubs that absorb random perturbations are also the nodes whose removal does the most damage.</p>
+</section>
+</section>
+<section id="discussion" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="discussion"><span class="header-section-number">6</span> Discussion</h2>
+<p>The US airport network is a textbook instance of emergent complexity. No single designer decreed that Atlanta should be the most critical node in the network; that distinction emerged from decades of airline route decisions, each individually rational, collectively producing a system with a small number of overloaded load-bearers and a long tail of peripheral spoke airports. The power-law degree distribution is not a quirk of aviation — it is what preferential attachment looks like at scale.</p>
+<p>Several implications follow from the robustness analysis.</p>
+<p><strong>Resilience planning should prioritize by betweenness, not by size.</strong> The largest airports by passenger volume are not identical to the most structurally critical airports by betweenness centrality. A disruption event that closes a high-betweenness, moderate-degree airport may fragment the network more severely than closing a high-volume hub. Emergency response planning that treats all large airports equally is systematically misaligned with network topology.</p>
+<p><strong>Edge redundancy matters more than node redundancy.</strong> The robustness curves suggest that adding more airports (nodes) provides diminishing returns if those airports simply attach as additional spokes to existing hubs. Adding routes between mid-tier airports — increasing edge density in the periphery — would reduce the structural load on the high-betweenness brokers and flatten the targeted-attack curve.</p>
+<p><strong>The OpenFlights dataset underestimates redundancy.</strong> Routes are unweighted and binary: a single weekly service and a 20-flights-per-day shuttle appear identically. A weighted analysis using BTS T-100 passenger data <span class="citation" data-cites="bts2024t100">(<a href="#ref-bts2024t100" role="doc-biblioref">Bureau of Transportation Statistics 2024</a>)</span> would produce a more operationally accurate picture, likely showing that the effective network is even more concentrated on a handful of heavily-trafficked routes.</p>
+</section>
+<section id="conclusion" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="conclusion"><span class="header-section-number">7</span> Conclusion</h2>
+<p>The US domestic airport network is simultaneously one of the most studied and most misunderstood complex systems in American infrastructure. Its everyday dysfunction — the missed connection, the cascading delay, the overbooked hub — is not a failure of management; it is a direct consequence of its topology. A scale-free, small-world graph optimizes for average-case efficiency at the cost of worst-case fragility.</p>
+<p>This analysis has quantified that trade-off. The degree distribution confirms scale-free structure. The small-world coefficient confirms that geographic clustering does not prevent global reachability. And the robustness curves make visible what operational experience has long suggested: the network is surprisingly robust to the random disruptions that fill the nightly news, and surprisingly vulnerable to the coordinated failures that resilience planners lose sleep over.</p>
+<p>Future work in this series will apply comparable methods to the US power grid and internet autonomous system topology, extending the comparison across infrastructure domains and asking whether the hub-and-spoke architectural pattern is universal or domain-specific.</p>
+</section>
+<section id="references" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-albert2000error" class="csl-entry" role="listitem">
+Albert, Réka, Hawoong Jeong, and Albert-László Barabási. 2000. <span>“Error and Attack Tolerance of Complex Networks.”</span> <em>Nature</em> 406 (6794): 378–82. <a href="https://doi.org/10.1038/35019019">https://doi.org/10.1038/35019019</a>.
+</div>
+<div id="ref-barabasi1999emergence" class="csl-entry" role="listitem">
+Barabási, Albert-László, and Réka Albert. 1999. <span>“Emergence of Scaling in Random Networks.”</span> <em>Science</em> 286 (5439): 509–12. <a href="https://doi.org/10.1126/science.286.5439.509">https://doi.org/10.1126/science.286.5439.509</a>.
+</div>
+<div id="ref-bts2024t100" class="csl-entry" role="listitem">
+Bureau of Transportation Statistics. 2024. <span>“T-100 Domestic Segment Data.”</span> <em>US Department of Transportation</em>. <a href="https://www.transtats.bts.gov/">https://www.transtats.bts.gov/</a>.
+</div>
+<div id="ref-clauset2009power" class="csl-entry" role="listitem">
+Clauset, Aaron, Cosma Rohilla Shalizi, and Mark EJ Newman. 2009. <span>“Power-Law Distributions in Empirical Data.”</span> <em>SIAM Review</em> 51 (4): 661–703. <a href="https://doi.org/10.1137/070710111">https://doi.org/10.1137/070710111</a>.
+</div>
+<div id="ref-guimera2005worldwide" class="csl-entry" role="listitem">
+Guimerà, Roger, Stefano Mossa, Adrian Turtschi, and Luis A Nunes Amaral. 2005. <span>“The Worldwide Air Transportation Network: Anomalous Centrality, Community Structure, and Cities’ Global Roles.”</span> <em>Proceedings of the National Academy of Sciences</em> 102 (22): 7794–99. <a href="https://doi.org/10.1073/pnas.0407994102">https://doi.org/10.1073/pnas.0407994102</a>.
+</div>
+<div id="ref-openflights2024" class="csl-entry" role="listitem">
+OpenFlights.org. 2024. <em>OpenFlights: Airport and Airline Data</em>. <a href="https://openflights.org/data.html">https://openflights.org/data.html</a>.
+</div>
+<div id="ref-watts1998collective" class="csl-entry" role="listitem">
+Watts, Duncan J, and Steven H Strogatz. 1998. <span>“Collective Dynamics of ’Small-World’ Networks.”</span> <em>Nature</em> 393 (6684): 440–42. <a href="https://doi.org/10.1038/30918">https://doi.org/10.1038/30918</a>.
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
